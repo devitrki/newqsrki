@@ -1,0 +1,1 @@
+<input class="form-control form-control-sm action-search" type="text" id="searchDtble{{$dtblecompid.$dom}}" placeholder="{{ __('Search') }}">

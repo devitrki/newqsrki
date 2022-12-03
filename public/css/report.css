@@ -1,0 +1,144 @@
+body {
+    font-family: "Rubik", sans-serif;
+		line-height: 1.25;
+		font-size: 14px;
+		color: #000000;
+		background-color: #ffffff;
+		padding: 2rem;
+}
+
+.report-logbook .logo {
+    width: 100%;
+    height: auto;
+    background-position: center;
+    max-height: 70px;
+    min-height: 60px;
+}
+
+.report-logbook .title {
+    position: relative;
+    text-align: center;
+}
+
+.report-logbook .title p {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: bold;
+}
+
+.report-logbook .head-item-row {
+    padding-top: 1.5rem;
+    padding-bottom: 1rem;
+}
+
+.report-logbook .head-item {
+    padding-bottom: 0.5rem;
+    font-size: .85em;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+.report-logbook b,
+strong,
+th {
+    font-weight: bold;
+}
+
+/* table data */
+.report-logbook table {
+    border: 1px solid #ddd;
+    border-collapse: collapse;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.report-logbook table caption {
+    font-size: 1.5em;
+    margin: .5em 0 .75em;
+}
+
+.report-logbook table thead tr {
+    background-color: #ececec;
+}
+
+.report-logbook table tr {
+    padding: .35em;
+    border: 1px solid #ddd;
+}
+
+.report-logbook table th,
+.report-logbook table td {
+    padding: .425em;
+    border-right: 1px solid #ddd;
+}
+
+.report-logbook table th {
+    font-size: .85em;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    text-align: center;
+}
+
+/* mobile */
+@media (max-width: 767.98px) {
+
+    .report-logbook .title p {
+        font-size: 1rem;
+        padding-left: 10px;
+        left: 0;
+        transform: translateY(-50%);
+    }
+
+    .report-logbook table {
+        border: 0;
+    }
+
+    .report-logbook table caption {
+        font-size: 1.3em;
+    }
+
+    .report-logbook table thead {
+        border: none;
+        clip: rect(0 0 0 0);
+        height: 1px;
+        margin: -1px;
+        overflow: hidden;
+        padding: 0;
+        position: absolute;
+        width: 1px;
+    }
+
+    .report-logbook table tr {
+        background-color: #f8f8f8;
+        border-bottom: 3px solid #ddd;
+        display: block;
+        margin-bottom: .625em;
+    }
+
+    .report-logbook table td {
+        border-bottom: 1px solid #ddd;
+        display: block;
+        font-size: .8em;
+        text-align: right;
+    }
+
+    .report-logbook table td::before {
+        /*
+            * aria-label has no advantage, it won't be read inside a table
+            content: attr(aria-label);
+            */
+        content: attr(data-label);
+        float: left;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .report-logbook table td:last-child {
+        border-bottom: 0;
+    }
+}

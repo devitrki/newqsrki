@@ -1,0 +1,428 @@
+<x-card-scroll>
+    <div class="row m-0">
+        <div class="col-12 p-0 fit-content-tabs">
+            <x-tools>
+                <x-slot name="left">
+                    @can('c'.$menu_id)
+                    <x-row-tools class="d-none d-sm-block">
+                        <x-button-tools tooltip="Create" icon="bx bx-plus-circle" :onclick="$dom. '.event.create()'" />
+                    </x-row-tools>
+                    @endcan
+                    <x-row-tools class="d-none d-sm-block">
+                        <x-button-tools tooltip="Delivery Order" icon="bx bx-printer" :onclick="$dom. '.event.deliveryOrder()'" />
+                    </x-row-tools>
+                    <x-row-tools class="d-none d-sm-block">
+                        <x-button-tools tooltip="Invoice" icon="bx bx-printer" :onclick="$dom. '.event.invoice()'" />
+                    </x-row-tools>
+                    <x-row-tools class="d-none d-sm-block">
+                        <x-button-tools tooltip="Invoice Copy" icon="bx bx-printer" :onclick="$dom. '.event.invoiceCopy()'" />
+                    </x-row-tools>
+                    <x-row-tools class="d-none d-sm-block">
+                        <x-button-tools tooltip="Refresh" icon="bx bx-revision" :onclick="'fdtbletabledata'.$dom.'.refresh()'" />
+                    </x-row-tools>
+                    <x-row-tools class="d-block d-sm-none">
+                        <div class="dropdown d-block d-sm-none">
+                            <span class="bx bx-menu font-medium-3 dropdown-toggle action-toggle-icon nav-hide-arrow cursor-pointer" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" role="menu">
+                            </span>
+                            <div class="dropdown-menu dropdown-menu-right">
+                                @can('c'.$menu_id)
+                                <a class="dropdown-item" href="javascript:void(0)" onclick="{{$dom}}.event.create()" ><i class="bx bx-plus-circle mr-50"></i>{{ __('Create') }}</a>
+                                @endcan
+                                <a class="dropdown-item" href="javascript:void(0)" onclick="{{$dom}}.event.deliveryOrder()" ><i class="bx bx-printer mr-50"></i>{{ __('Delivery Order') }}</a>
+                                <a class="dropdown-item" href="javascript:void(0)" onclick="{{$dom}}.event.invoice()" ><i class="bx bx-printer mr-50"></i>{{ __('Invoice') }}</a>
+                                <a class="dropdown-item" href="javascript:void(0)" onclick="{{$dom}}.event.invoiceCopy()" ><i class="bx bx-printer mr-50"></i>{{ __('Invoice Copy') }}</a>
+                                <a class="dropdown-item" href="javascript:void(0)" onclick=fdtbletabledata{{$dom}}.refresh()><i class="bx bx-revision mr-50"></i>{{ __('Refresh') }}</a>
+                            </div>
+                        </div>
+                    </x-row-tools>
+                </x-slot>
+                <x-slot name="right">
+                    <x-row-tools>
+                        <x-dropdown-filter :dom="$dom" dtblecompid="tabledata">
+                            <div class="col-12">
+                                <x-form-vertical>
+                                    <x-row-vertical label="Plant">
+                                        <x-select :dom="$dom" compid="fplant" type="serverside" url="master/plant/select?auth=true" size="sm" dropdowncompid="tabledata" :default="[$first_plant_id, $first_plant_name]"/>
+                                    </x-row-vertical>
+                                    <x-row-vertical label="From">
+                                        <x-pickerdate :dom="$dom" compid="ffrom" data-value="{{ date('Y/m/d', strtotime('-30 days')) }}" clear="false"/>
+                                    </x-row-vertical>
+                                    <x-row-vertical label="Until">
+                                        <x-pickerdate :dom="$dom" compid="funtil" data-value="{{ date('Y/m/d') }}" clear="false" />
+                                    </x-row-vertical>
+                                </x-form-vertical>
+                            </div>
+                            <div class="col-12 text-right">
+                                <button type="button" class="btn btn-secondary ml-1 btn-sm" onclick="{{$dom}}.func.filter()">
+                                    <span>{{ __('Filter') }}</span>
+                                </button>
+                            </div>
+                        </x-dropdown-filter>
+                    </x-row-tools>
+                    <x-row-tools>
+                        <x-dropdown-export :dom="$dom" dtblecompid="tabledata" />
+                    </x-row-tools>
+                    <x-row-tools>
+                        <x-input-search :dom="$dom" dtblecompid="tabledata" />
+                    </x-row-tools>
+                </x-slot>
+            </x-tools>
+            @php
+                $columns =
+                    [[
+                        'label' => 'document number',
+                        'data' => 'document_number',
+                        'searchable' => 'true',
+                        'orderable' => 'false',
+                    ],[
+                        'label' => 'document date',
+                        'data' => 'date_desc',
+                        'searchable' => 'false',
+                        'orderable' => 'false',
+                    ],[
+                        'label' => 'plant',
+                        'data' => 'plant_sender',
+                        'searchable' => 'false',
+                        'orderable' => 'false',
+                    ],[
+                        'label' => 'pic',
+                        'data' => 'pic_sender',
+                        'searchable' => 'true',
+                        'orderable' => 'false',
+                    ],[
+                        'label' => 'total sales',
+                        'data' => 'subtotal_sales',
+                        'searchable' => 'false',
+                        'orderable' => 'false',
+                    ],[
+                        'label' => 'note',
+                        'data' => 'note',
+                        'searchable' => 'true',
+                        'orderable' => 'false',
+                    ]];
+            @endphp
+            <x-datatable-serverside :dom="$dom" compid="tabledata" :tabmenu="$menu_id" :columns="$columns" url="inventory/usedoil/uo-sales/dtble?plant-id={{ $first_plant_id }}&from={{ date('Y/m/d', strtotime('-30 days')) }}&until={{ date('Y/m/d') }}" :select="[true, 'single']" />
+        </div>
+    </div>
+</x-card-scroll>
+
+
+<!-- modal -->
+<x-modal :dom="$dom" compid="modalmanage" title="Sales" size="lg">
+    <x-form-horizontal>
+        <x-row-horizontal label="Plant">
+            <x-select :dom="$dom" compid="plant" type="serverside" url="master/plant/select?auth=true" size="sm"/>
+        </x-row-horizontal>
+        <x-row-horizontal label="Vendor">
+            <input type="text" class="form-control form-control-sm" id="vendor{{$dom}}" readonly>
+        </x-row-horizontal>
+        <x-row-horizontal label="PIC">
+            <input type="text" class="form-control form-control-sm" id="pic{{$dom}}">
+        </x-row-horizontal>
+        <x-row-horizontal label="Note">
+            <input type="text" class="form-control form-control-sm" id="note{{$dom}}">
+        </x-row-horizontal>
+    </x-form-horizontal>
+    <div class="row mb-1">
+        <div class="col-12 mb-1">
+            <label>{{ __('Material Used Oil') }}</label>
+        </div>
+        <div class="col-12">
+            @php
+                $columns =
+                    [[
+                        'label' => 'code',
+                        'data' => 'code',
+                    ],[
+                        'label' => 'name',
+                        'data' => 'name',
+                    ],[
+                        'label' => 'price',
+                        'data' => 'price_desc',
+                    ],[
+                        'label' => 'stock',
+                        'data' => 'stock_desc',
+                    ],[
+                        'label' => 'Qty',
+                        'data' => 'qty_input',
+                        'class' => 'input'
+                    ],[
+                        'label' => 'uom',
+                        'data' => 'uom',
+                    ]];
+            @endphp
+            <x-datatable-serverside :dom="$dom" compid="tabledetail" :columns="$columns" url="" compidmodal="modalmanage" footer="false" height="150" />
+        </div>
+    </div>
+
+    <x-slot name="footer">
+        <button class="btn btn-light btn-sm" data-dismiss="modal">
+            <span>{{ __('Cancel') }}</span>
+        </button>
+        <button class="btn btn-secondary ml-1 btn-sm" onclick="{{$dom}}.func.save()">
+            <span>{{ __('Save') }}</span>
+        </button>
+    </x-slot>
+</x-modal>
+
+<x-modal :dom="$dom" compid="modalstockcurrent" title="Stock Current" size="lg">
+    <div class="row mb-2">
+        <div class="col-12">
+            @php
+        $columns =
+            [[
+                'label' => 'plant',
+                'data' => 'plant',
+            ],[
+                'label' => 'material code',
+                'data' => 'code',
+            ],[
+                'label' => 'material name',
+                'data' => 'name',
+            ],[
+                'label' => 'material uom',
+                'data' => 'uom',
+            ],[
+                'label' => 'Qty Stock Current',
+                'data' => 'stock',
+            ]];
+    @endphp
+    <x-datatable-serverside :dom="$dom" compid="tablestockcurrent" :columns="$columns" url="" compidmodal="modalstockcurrent" footer="false" height="170" />
+        </div>
+    </div>
+</x-modal>
+<!-- end modal -->
+
+<script>
+$('#select2plant{{$dom}}').on('select2:select', function (e) {
+    var plant = fslctplant{{$dom}}.get();
+
+    loadingModal("start");
+
+    $.get( "inventory/usedoil/uo-vendor/vendor/" + plant, function (res) {
+        loadingModal("stop");
+        var id = 0;
+        if( res.status == 'success' ){
+            if( res.data ){
+                id = res.data.id;
+                $("#vendor{{$dom}}").val(res.data.name);
+            } else {
+                $("#vendor{{$dom}}").val('');
+                message.info("{{ __('Vendor for this plant not yet mapping. Please contact purchasing team.') }}");
+            }
+        } else {
+            $("#vendor{{$dom}}").val('');
+            message.failed("{{ __('Sorry something went wrong') }}");
+        }
+
+        fdtbletabledetail{{$dom}}.changeUrl({{$dom}}.url.urlDtble + id + '/' + plant);
+
+    }, 'json');
+});
+
+{{$dom}} = {
+   data: {
+        id: 0,
+    },
+    url: {
+        save: "inventory/usedoil/uo-sales",
+        datatable: "inventory/usedoil/uo-sales/dtble",
+        datatableView: "inventory/usedoil/uo-sales/dtble/view/",
+        urlDtble: "inventory/usedoil/uo-vendor/dtble/price/uosales/"
+    },
+    event: {
+        create: function () {
+            {{$dom}}.func.reset();
+
+            showModal('modalmanage{{$dom}}');
+        },
+        cancel: function () {
+            var rows = fdtbletabledata{{$dom}}.getSelectedCount();
+            if( rows < 1  ){
+                message.info(" {{ __('validation.table.empty') }} ");
+                return false;
+            }
+
+            var row_data = fdtbletabledata{{$dom}}.getSelectedData();
+            data = row_data[0];
+
+            if( data.is_reverse != '0'){
+                message.info(" {{ __('This transaction has been canceled.') }} ");
+                return false;
+            }
+
+            if( data.gr_status != '0'){
+                message.info(" {{ __('This transaction has been gr.') }} ");
+                return false;
+            }
+
+            {{$dom}}.func.resetCancel();
+
+            showModal('modalcancel{{$dom}}');
+        },
+        deliveryOrder: function () {
+            var rows = fdtbletabledata{{$dom}}.getSelectedCount();
+            if( rows < 1  ){
+                message.info(" {{ __('validation.table.empty') }} ");
+                return false;
+            }
+
+            // check
+            var row_data = fdtbletabledata{{$dom}}.getSelectedData();
+            data = row_data[0];
+
+            window.open('inventory/usedoil/uo-sales/delivery-order/' + data.id);
+        },
+        invoice: function () {
+            var rows = fdtbletabledata{{$dom}}.getSelectedCount();
+            if( rows < 1  ){
+                message.info(" {{ __('validation.table.empty') }} ");
+                return false;
+            }
+
+            // check
+            var row_data = fdtbletabledata{{$dom}}.getSelectedData();
+            data = row_data[0];
+
+            window.open('inventory/usedoil/uo-sales/invoice/' + data.id);
+        },
+        invoiceCopy: function () {
+            var rows = fdtbletabledata{{$dom}}.getSelectedCount();
+            if( rows < 1  ){
+                message.info(" {{ __('validation.table.empty') }} ");
+                return false;
+            }
+
+            // check
+            var row_data = fdtbletabledata{{$dom}}.getSelectedData();
+            data = row_data[0];
+
+            window.open('inventory/usedoil/uo-sales/invoice-copy/' + data.id);
+        },
+    },
+    func: {
+        filter: function () {
+            var url = {{$dom}}.url.datatable + '?plant-id=' + fslctfplant{{$dom}}.get() + '&from=' + pickerdateffrom{{$dom}}.get('select', 'yyyy/mm/dd') + '&until=' + pickerdatefuntil{{$dom}}.get('select', 'yyyy/mm/dd');
+            fdtbletabledata{{$dom}}.changeUrl(url);
+            dropdown.hide('hfiltertabledata{{$dom}}');
+        },
+        reset: function () {
+            {{$dom}}.data.id = 0;
+            fslctplant{{$dom}}.clear();
+            $("#pic{{$dom}}").val('');
+            $("#note{{$dom}}").val('');
+            $("#vendor{{$dom}}").val('');
+        },
+        resetCancel: function () {
+            {{$dom}}.data.id = 0;
+            $("#pic_cancel{{$dom}}").val('');
+            $("#note_cancel{{$dom}}").val('');
+        },
+        showView: function () {
+            var row = fdtbletabledata{{$dom}}.getSelectedData();
+            var data = row[0];
+            fslctvplant{{$dom}}.set(data.plant_id_sender, data.plant_sender);
+            $("#vpic{{$dom}}").val(data.pic_sender);
+            $("#vnote{{$dom}}").val(data.note);
+
+            $("#select2vplant{{$dom}}").prop("disabled", true);
+            fdtbletableview{{$dom}}.changeUrl({{$dom}}.url.datatableView + data.id);
+
+            showModal('modalview{{$dom}}');
+        },
+        getDataForm: function () {
+            var datas = fdtbletabledetail{{$dom}}.getAllData();
+            var material_id = [];
+            var price = [];
+            datas.map(function (data) {
+                material_id.push(data.id);
+                price.push(data.price);
+            });
+
+            return {
+                'plant': fslctplant{{$dom}}.get(),
+                'pic': $("#pic{{$dom}}").val(),
+                'note': $("#note{{$dom}}").val(),
+                'material_id': material_id,
+                'price': price,
+                'qty': $("input[name='uosales[]']").map(function(){return $(this).val();}).get(),
+                'id': {{$dom}}.data.id
+            }
+        },
+        save: function () {
+            hideErrors();
+
+            var data = {{$dom}}.func.getDataForm();
+            var url = {{$dom}}.url.save;
+            if( {{$dom}}.data.id != 0 ){
+                url += '/' + {{$dom}}.data.id;
+                data._method = 'PUT';
+            }
+
+            var have = false;
+            for (let i = 0; i < data.qty.length; i++) {
+                if( data.qty[i] > 0 ){
+                    have = true;
+                    break;
+                }
+            }
+
+            if( !have ){
+                message.info('{{ __("Please input qty first") }}');
+                return false
+            }
+
+            loadingModal('start');
+
+            $.post( url, data, function (res) {
+                loadingModal("stop");
+                if( res.status == 'success' ){
+                    fdtbletabledata{{$dom}}.refresh();
+                    hideModal('modalmanage{{$dom}}');
+
+                    // stock current show
+                    fdtbletablestockcurrent{{$dom}}.changeUrl("inventory/usedoil/uo-stock/dtble/current/" + data.plant);
+                    showModal('modalstockcurrent{{$dom}}');
+                    // stock current show
+
+                    message.success(res.message);
+                } else {
+                    message.info(res.message);
+                }
+            }, 'json');
+        },
+        cancel: function () {
+            hideErrors();
+
+            var data = {
+                'pic': $("#pic_cancel{{$dom}}").val(),
+                'note': $("#note_cancel{{$dom}}").val(),
+            };
+
+            var row = fdtbletabledata{{$dom}}.getSelectedData();
+            var url = {{$dom}}.url.save + '/cancel/' + row[0].id;
+
+            loadingModal('start');
+
+            $.post( url, data, function (res) {
+                loadingModal("stop");
+                if( res.status == 'success' ){
+                    fdtbletabledata{{$dom}}.refresh();
+                    hideModal('modalcancel{{$dom}}');
+
+                    // stock current show
+                    fdtbletablestockcurrent{{$dom}}.changeUrl("inventory/usedoil/uo-stock/dtble/current/" + row[0].plant_id_sender);
+                    showModal('modalstockcurrent{{$dom}}');
+                    // stock current show
+
+                    message.success(res.message);
+                } else {
+                    message.failed(res.message);
+                }
+            }, 'json');
+
+        }
+    }
+}
+
+</script>
