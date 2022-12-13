@@ -38,7 +38,11 @@ class NotificationSystemController extends Controller
                     ->select(['languanges.lang', 'notification_system_contents.title', 'notification_system_contents.id',
                               'notification_system_contents.languange_id', 'notification_system_contents.content'])
                     ->where('notification_system_id', '=', $id);
-        return Datatables::of($query)->addIndexColumn()->make();
+
+        return Datatables::of($query)
+                    ->addIndexColumn()
+                    ->rawColumns(['content'])
+                    ->make();
     }
 
     public function store(Request $request)

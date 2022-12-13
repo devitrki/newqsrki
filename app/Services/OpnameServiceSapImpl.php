@@ -30,11 +30,11 @@ class OpnameServiceSapImpl implements OpnameService
                     ->where('id', $opnameId)
                     ->first();
 
-        $sapCodeComp = Company::getConfigByKey($opname->company_id, 'sap_code');
+        $sapCodeComp = Company::getConfigByKey($opname->company_id, 'SAP_CODE');
         if (!$sapCodeComp || $sapCodeComp == '') {
             return [
                 'status' => false,
-                'message' => Lang::get('Please set sap_code in company configuration'),
+                'message' => Lang::get('Please set SAP_CODE in company configuration'),
                 'data' => $data
             ];
         }
@@ -54,7 +54,7 @@ class OpnameServiceSapImpl implements OpnameService
             'material_type_id' => Stock::getMaterialTypeAll()
         ];
 
-        $sapRepository = new SapRepositorySapImpl(true);
+        $sapRepository = new SapRepositorySapImpl($opname->company_id, true);
         $sapResponse = $sapRepository->getCurrentStockPlant($payload);
 
         $stockSap = [];
@@ -125,18 +125,18 @@ class OpnameServiceSapImpl implements OpnameService
                     ->where('id', $opname->plant_id)
                     ->first();
 
-        $sapCodeComp = Company::getConfigByKey($opname->company_id, 'sap_code');
+        $sapCodeComp = Company::getConfigByKey($opname->company_id, 'SAP_CODE');
         if (!$sapCodeComp || $sapCodeComp == '') {
             return [
                 'status' => false,
-                'message' => Lang::get('Please set sap_code in company configuration'),
+                'message' => Lang::get('Please set SAP_CODE in company configuration'),
                 'data' => $data
             ];
         }
 
         $dataUpload = $this->getOpnameFormat($opname, $sapCodeComp);
 
-        $sapRepository = new SapRepositorySapImpl(true);
+        $sapRepository = new SapRepositorySapImpl($opname->company_id, true);
         $sapResponse = $sapRepository->uploadOpname($dataUpload);
 
         if ($sapResponse['status']) {

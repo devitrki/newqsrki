@@ -7,17 +7,18 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
-use DataTables;
+use Illuminate\Support\Facades\Lang;
+use Yajra\DataTables\DataTables;
 use App\Library\Helper;
 
 use App\Mail\Financeacc\Assets\NotificationRequestMutation;
 use App\Mail\Financeacc\Assets\NotificationMutation;
 
 use App\Models\Plant;
+use App\Models\User;
 use App\Models\Financeacc\AssetValidator;
 use App\Models\Financeacc\AssetRequestMutation;
 use App\Models\Financeacc\AssetMutation;
-use App\Models\User;
 
 class AssetRequestMutationController extends Controller
 {
@@ -32,8 +33,10 @@ class AssetRequestMutationController extends Controller
         return view('financeacc.asset-request-mutation', $dataview)->render();
     }
 
-    public function dtble()
+    public function dtble(Request $request)
     {
+        $userAuth = $request->get('userAuth');
+
         $query = DB::table('asset_request_mutations')
                     ->join('users', 'users.id', '=', 'asset_request_mutations.user_id')
                     ->join('profiles', 'profiles.id', '=', 'users.profile_id')
@@ -41,6 +44,7 @@ class AssetRequestMutationController extends Controller
                     ->join('plants as plant_from', 'plant_from.id', '=', 'asset_request_mutations.from_plant_id')
                     ->join('plants as plant_to', 'plant_to.id', '=', 'asset_request_mutations.to_plant_id')
                     ->join('asset_validators', 'asset_validators.id', '=', 'asset_request_mutations.asset_validator_id')
+                    ->where('asset_request_mutations.company_id', $userAuth->company_id_selected)
                     ->select('asset_request_mutations.id', 'asset_request_mutations.description', 'asset_request_mutations.number',
                             'asset_request_mutations.number_sub', 'asset_request_mutations.qty_mutation', 'asset_request_mutations.uom',
                             'asset_request_mutations.from_cost_center', 'asset_request_mutations.to_cost_center',
@@ -120,13 +124,13 @@ class AssetRequestMutationController extends Controller
         $assetRequestMutation->step_request_desc = 'Approved By HOD/RM';
         if($assetRequestMutation->save()){
             // send email notification
-            Mail::send(new NotificationRequestMutation($assetRequestMutation->id));
+            Mail::queue(new NotificationRequestMutation($assetRequestMutation->id));
 
             $stat = 'success';
-            $msg = \Lang::get("message.approve.success", ["data" => \Lang::get("mutation request")]);
+            $msg = Lang::get("message.approve.success", ["data" => Lang::get("mutation request")]);
         } else {
             $stat = 'failed';
-            $msg = \Lang::get("message.approve.failed", ["data" => \Lang::get("mutation request")]);
+            $msg = Lang::get("message.approve.failed", ["data" => Lang::get("mutation request")]);
         }
 
         return response()->json(Helper::resJSON($stat, $msg));
@@ -146,13 +150,13 @@ class AssetRequestMutationController extends Controller
         $assetRequestMutation->step_request_desc = 'UnApprove By Approval';
         if($assetRequestMutation->save()){
             // send email notification
-            Mail::send(new NotificationRequestMutation($assetRequestMutation->id));
+            Mail::queue(new NotificationRequestMutation($assetRequestMutation->id));
 
             $stat = 'success';
-            $msg = \Lang::get("message.unapprove.success", ["data" => \Lang::get("mutation request")]);
+            $msg = Lang::get("message.unapprove.success", ["data" => Lang::get("mutation request")]);
         } else {
             $stat = 'failed';
-            $msg = \Lang::get("message.unapprove.failed", ["data" => \Lang::get("mutation request")]);
+            $msg = Lang::get("message.unapprove.failed", ["data" => Lang::get("mutation request")]);
         }
 
         return response()->json(Helper::resJSON($stat, $msg));
@@ -169,13 +173,13 @@ class AssetRequestMutationController extends Controller
         $assetRequestMutation->asset_validator_id = $request->assign_validator;
         if($assetRequestMutation->save()){
             // send email notification
-            Mail::send(new NotificationRequestMutation($assetRequestMutation->id));
+            Mail::queue(new NotificationRequestMutation($assetRequestMutation->id));
 
             $stat = 'success';
-            $msg = \Lang::get("message.save.success", ["data" => \Lang::get("assign validator request")]);
+            $msg = Lang::get("message.save.success", ["data" => Lang::get("assign validator request")]);
         } else {
             $stat = 'failed';
-            $msg = \Lang::get("message.save.failed", ["data" => \Lang::get("assign validator request")]);
+            $msg = Lang::get("message.save.failed", ["data" => Lang::get("assign validator request")]);
         }
 
         return response()->json(Helper::resJSON($stat, $msg));
@@ -196,13 +200,13 @@ class AssetRequestMutationController extends Controller
         $assetRequestMutation->step_request_desc = 'Confirmed By Validator';
         if($assetRequestMutation->save()){
             // send email notification
-            Mail::send(new NotificationRequestMutation($assetRequestMutation->id));
+            Mail::queue(new NotificationRequestMutation($assetRequestMutation->id));
 
             $stat = 'success';
-            $msg = \Lang::get("message.save.success", ["data" => \Lang::get("confirmation validator request")]);
+            $msg = Lang::get("message.save.success", ["data" => Lang::get("confirmation validator request")]);
         } else {
             $stat = 'failed';
-            $msg = \Lang::get("message.save.failed", ["data" => \Lang::get("confirmation validator request")]);
+            $msg = Lang::get("message.save.failed", ["data" => Lang::get("confirmation validator request")]);
         }
 
         return response()->json(Helper::resJSON($stat, $msg));
@@ -222,13 +226,13 @@ class AssetRequestMutationController extends Controller
         $assetRequestMutation->step_request_desc = 'Rejected By Validator';
         if($assetRequestMutation->save()){
             // send email notification
-            Mail::send(new NotificationRequestMutation($assetRequestMutation->id));
+            Mail::queue(new NotificationRequestMutation($assetRequestMutation->id));
 
             $stat = 'success';
-            $msg = \Lang::get("message.save.success", ["data" => \Lang::get("reject validator request")]);
+            $msg = Lang::get("message.save.success", ["data" => Lang::get("reject validator request")]);
         } else {
             $stat = 'failed';
-            $msg = \Lang::get("message.save.failed", ["data" => \Lang::get("reject validator request")]);
+            $msg = Lang::get("message.save.failed", ["data" => Lang::get("reject validator request")]);
         }
 
         return response()->json(Helper::resJSON($stat, $msg));
@@ -241,6 +245,8 @@ class AssetRequestMutationController extends Controller
             'est_send_date' => 'required'
         ]);
 
+        $userAuth = $request->get('userAuth');
+
         $assetRequestMutation = AssetRequestMutation::find($request->id);
         $assetRequestMutation->date_send = \Carbon\Carbon::now();
         $assetRequestMutation->step_request = 7;
@@ -250,6 +256,7 @@ class AssetRequestMutationController extends Controller
 
             // create mutation asset
             $assetMutation = new AssetMutation;
+            $assetMutation->company_id = $userAuth->company_id_selected;
             $assetMutation->number = $assetRequestMutation->number;
             $assetMutation->number_sub = $assetRequestMutation->number_sub;
             $assetMutation->description = $assetRequestMutation->description;
@@ -271,18 +278,18 @@ class AssetRequestMutationController extends Controller
             $assetMutation->status_mutation_desc = 'Send By Plant Sender';
             if ($assetMutation->save()) {
                 // send email
-                Mail::send(new NotificationMutation($assetMutation->id));
+                Mail::queue(new NotificationMutation($assetMutation->id));
 
                 // send email notification
-                Mail::send(new NotificationRequestMutation($assetRequestMutation->id));
+                Mail::queue(new NotificationRequestMutation($assetRequestMutation->id));
 
                 $stat = 'success';
-                $msg = \Lang::get("message.save.success", ["data" => \Lang::get("send request asset transfer")]);
+                $msg = Lang::get("message.save.success", ["data" => Lang::get("send request asset transfer")]);
             }
 
         } else {
             $stat = 'failed';
-            $msg = \Lang::get("message.save.failed", ["data" => \Lang::get("send request asset transfer")]);
+            $msg = Lang::get("message.save.failed", ["data" => Lang::get("send request asset transfer")]);
         }
 
         return response()->json(Helper::resJSON($stat, $msg));

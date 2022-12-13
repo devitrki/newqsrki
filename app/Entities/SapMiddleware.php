@@ -8,6 +8,7 @@ class SapMiddleware
     const MASTER_PLANT_PATH_URL         = '/' . self::VERSION . '/plant';
     const MASTER_MATERIAL_PATH_URL      = '/' . self::VERSION . '/material';
     const MASTER_ASSET_PATH_URL         = '/' . self::VERSION . '/asset';
+    const UPLOAD_GI_PO_STO_PATH_URL     = '/' . self::VERSION . '/gi/posto';
     const UPLOAD_GR_PO_STO_PATH_URL     = '/' . self::VERSION . '/gr/po-sto';
     const UPLOAD_GR_PO_VENDOR_PATH_URL  = '/' . self::VERSION . '/gr/vendor';
     const UPLOAD_STOCK_OPNAME_PATH_URL  = '/' . self::VERSION . '/stock/opname';
@@ -18,14 +19,12 @@ class SapMiddleware
     const LIST_OUTSTANDING_PO_PATH_URL  = '/' . self::VERSION . '/po/outstanding';
     const LIST_CURRENT_STOCK_PATH_URL   = '/' . self::VERSION . '/stock/current';
 
-    public static function generateSignature($timestamp, $path, $payload, $method = null){
+    public static function generateSignature($apiKey, $secretKey, $timestamp, $path, $payload, $method = null){
         if ($method === null) {
             $method = 'POST';
         }
 
         $hashType = 'sha256';
-        $apiKey = config('qsrki.api.sap_middleware.api_key');
-        $secretKey = config('qsrki.api.sap_middleware.api_secret_key');
         $pathUrl = $method . $path;
 
         $message =  $apiKey     .
@@ -39,9 +38,7 @@ class SapMiddleware
         return $signature;
     }
 
-    public static function getHeaderHttp($timestamp, $signature){
-        $apiKey = config('qsrki.api.sap_middleware.api_key');
-
+    public static function getHeaderHttp($apiKey, $timestamp, $signature){
         return [
             'X-Timestamp' => $timestamp,
             'X-Signature' => $signature,

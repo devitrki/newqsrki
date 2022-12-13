@@ -32,13 +32,13 @@ class UsersSeeder extends Seeder
         $company_rki = new Company;
         $company_rki->name = "RKI Indonesia";
         $company_rki->code = "rki";
-        $company_rki->configurations = '{"sap_code":"RKI"}';
+        $company_rki->configurations = '{"SAP_CODE":"RKI","TIMEZONE":"Asia\/Jakarta","SAP_API_KEY":"556b4e4e5757736a51544d33526a4a6c5956413d","SAP_API_SECRET_KEY":"$2a$14$EJfDx1FmOs4x9nvO2M\/77ebBBhngayO1\/uC48JafVqtG\/CmplNaN6"}';
         $company_rki->save();
 
         $company = new Company;
         $company->name = "RKI Malaysia";
-        $company->code = "rsh";
-        $company->configurations = '{"sap_code":""}';
+        $company->code = "RCMY";
+        $company->configurations = '{"SAP_CODE":"RKI","TIMEZONE":"Asia\/Kuala_Lumpur","SAP_API_KEY":"556b744a5569566551484d7963444e3663513d3d","SAP_API_SECRET_KEY":"$2a$14$V1D01aZwST08QnqgAcmYTumDEiZrzMDsEOugWDxHCsCDT2eDL0z3y"}';
         $company->save();
 
         // create department IT

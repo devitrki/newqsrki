@@ -11,14 +11,18 @@ use App\Library\Helper;
 
 class UoStockController extends Controller
 {
-    public function dtbleCurrent($plantId)
+    public function dtbleCurrent(Request $request, $plantId)
     {
+        $userAuth = $request->get('userAuth');
+
         $query = DB::table('uo_stocks')
                     ->join('uo_materials', 'uo_materials.code', 'uo_stocks.material_code')
                     ->join('plants', 'plants.id', 'uo_stocks.plant_id')
+                    ->where('uo_stocks.company_id', $userAuth->company_id_selected)
                     ->where('uo_stocks.plant_id', $plantId)
                     ->select('uo_materials.code', 'uo_materials.name', 'uo_materials.uom', 'uo_stocks.stock',
                         DB::raw("CONCAT(plants.initital ,' ', plants.short_name) AS plant"));
+
         return Datatables::of($query)->addIndexColumn()->make();
     }
 }

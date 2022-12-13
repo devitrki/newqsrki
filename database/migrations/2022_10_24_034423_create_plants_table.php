@@ -36,7 +36,7 @@ return new class extends Migration
             $table->string('sloc_id_gr', 15)->default('S001');
             $table->string('sloc_id_gr_vendor', 15)->default('S001');
             $table->string('sloc_id_waste', 15)->default('S001');
-            $table->string('sloc_id_asset_mutation', 15)->default('S001');
+            $table->string('sloc_id_asset_mutation', 15)->default('r100');
             $table->string('sloc_id_current_stock', 15)->default('S001');
             // status & type
             $table->tinyInteger('type')->comment('1 = Outlet, 2 = DC');

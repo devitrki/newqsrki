@@ -32,6 +32,8 @@ class StockServiceAppsImpl implements StockService
             $stocks = $sapResponse['response'];
         }
 
+        !dd($stocks);
+
         return [
             'status' => $status,
             'message' => $message,

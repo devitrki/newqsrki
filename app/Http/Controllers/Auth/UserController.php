@@ -129,7 +129,7 @@ class UserController extends Controller
         $query = DB::table('users')
                     ->leftJoin('profiles', 'profiles.id', '=', 'users.profile_id')
                     ->leftJoin('model_has_roles', 'model_has_roles.model_id', '=', 'users.id')
-                    ->whereIn('company_id', [0, $userAuth->company_id_selected])
+                    ->whereIn('profiles.company_id', [0, $userAuth->company_id_selected])
                     ->select(['users.id', 'profiles.name as text']);
 
         $roleSc = Configuration::getValueByKeyFor('general_master', 'role_sc');

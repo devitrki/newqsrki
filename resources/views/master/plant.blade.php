@@ -129,6 +129,11 @@
                                 'orderable' => 'false',
                             ],
                             [
+                                'label' => 'Sloc ID Gi Plant',
+                                'data' => 'sloc_id_gi_plant',
+                                'orderable' => 'false',
+                            ],
+                            [
                                 'label' => 'Sloc ID gr',
                                 'data' => 'sloc_id_gr',
                                 'orderable' => 'false',
@@ -151,6 +156,11 @@
                             [
                                 'label' => 'Sloc ID Current Stock',
                                 'data' => 'sloc_id_current_stock',
+                                'orderable' => 'false',
+                            ],
+                            [
+                                'label' => 'Sloc ID Opname',
+                                'data' => 'sloc_id_opname',
                                 'orderable' => 'false',
                             ],
                             [
@@ -236,6 +246,9 @@
                 <x-row-horizontal label="Area Order">
                     <x-select :dom="$dom" compid="area" type="serverside" url="master/area/select" size="sm"/>
                 </x-row-horizontal>
+                <x-row-horizontal label="Sloc ID GI Plant">
+                    <input type="text" class="form-control form-control-sm" id="sloc_id_gi_plant{{$dom}}">
+                </x-row-horizontal>
             </div>
             <div class="col-12 col-md-6">
                 <x-row-horizontal label="Sloc ID GR">
@@ -252,6 +265,9 @@
                 </x-row-horizontal>
                 <x-row-horizontal label="Sloc ID Current Stock">
                     <input type="text" class="form-control form-control-sm" id="sloc_id_current_stock{{$dom}}">
+                </x-row-horizontal>
+                <x-row-horizontal label="Sloc ID Opname">
+                    <input type="text" class="form-control form-control-sm" id="sloc_id_opname{{$dom}}">
                 </x-row-horizontal>
             </div>
             <div class="col-12">
@@ -354,11 +370,13 @@
             $('#drivethru{{$dom}}').val(data.drivethru);
             $('#price_category{{$dom}}').val(data.price_category);
 
+            $('#sloc_id_gi_plant{{$dom}}').val(data.sloc_id_gi_plant);
             $('#sloc_id_gr{{$dom}}').val(data.sloc_id_gr);
             $('#sloc_id_gr_vendor{{$dom}}').val(data.sloc_id_gr_vendor);
             $('#sloc_id_waste{{$dom}}').val(data.sloc_id_waste);
             $('#sloc_id_asset_mutation{{$dom}}').val(data.sloc_id_asset_mutation);
             $('#sloc_id_current_stock{{$dom}}').val(data.sloc_id_current_stock);
+            $('#sloc_id_opname{{$dom}}').val(data.sloc_id_opname);
 
             fslctdc{{$dom}}.set(data.dc_id, data.pdc_name);
             fslctarea{{$dom}}.set(data.area_id, data.area);
@@ -384,11 +402,13 @@
                 'drivethru': $('#drivethru{{$dom}}').val(),
                 'pos': fslctpos{{$dom}}.get(),
                 'price_category': $('#price_category{{$dom}}').val(),
+                'sloc_id_gi_plant': $('#sloc_id_gi_plant{{$dom}}').val(),
                 'sloc_id_gr': $('#sloc_id_gr{{$dom}}').val(),
                 'sloc_id_gr_vendor': $('#sloc_id_gr_vendor{{$dom}}').val(),
                 'sloc_id_waste': $('#sloc_id_waste{{$dom}}').val(),
                 'sloc_id_asset_mutation': $('#sloc_id_asset_mutation{{$dom}}').val(),
                 'sloc_id_current_stock': $('#sloc_id_current_stock{{$dom}}').val(),
+                'sloc_id_opname': $('#sloc_id_opname{{$dom}}').val(),
                 'dc': fslctdc{{$dom}}.get(),
                 'area': fslctarea{{$dom}}.get(),
             }

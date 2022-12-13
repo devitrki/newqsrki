@@ -17,6 +17,8 @@ use App\Models\Tax\HistorySendTax;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\Tax\GenerateTransaction;
 
+use App\Repositories\AlohaRepository;
+
 use App\Models\Plant;
 
 class SendTaxFtp implements ShouldQueue
@@ -50,113 +52,74 @@ class SendTaxFtp implements ShouldQueue
                         ->where('send_taxes.id', $this->send_tax_id)
                         ->select(
                             'send_taxes.id',
+                            'send_taxes.company_id',
                             'send_taxes.plant_id',
                             'ftp_governments.transfer_type',
                             'send_taxes.prefix_name_store',
                         )
                         ->first();
 
+        $plant = DB::table('plants')
+                    ->where('id', $sendTax->plant_id)
+                    ->first();
+
+        $plantPosId = Plant::getPosById($sendTax->plant_id);
+
         // check transaction complete / not complete
-        $urlComplete = config('qsrki.api.aloha.url') . config('qsrki.api.aloha.complete');
-
-        $param = [
-            'date' => Helper::DateConvertFormat($this->date, 'Y/m/d', 'd/m/Y'),
-            'store_code' => Plant::getCustomerCodeById($sendTax->plant_id)
-        ];
-
-        $responseComplete = Http::post($urlComplete, $param);
-        if ($responseComplete->successful()) {
-            $respComplete = $responseComplete->json();
-
-            if ($respComplete['status'] == 'success') {
-
-                if ($respComplete['data'] != 'null') {
-
-                    $count = $respComplete['data']['Count'];
-
-                    if($count != 0){
-
-                        $this->getTranctionTax($param, $sendTax);
-
-                    }else{
-                        // adding error transaction not complete
-                        HistorySendTax::addHistoryFailed($this->date, $sendTax->id, 'Transaction not complete');
-                    }
-                } else {
-                    // adding error null result
-                    HistorySendTax::addHistoryFailed($this->date, $sendTax->id, 'Transaction not complete');
-                }
+        $alohaRepository = new AlohaRepository($plantPosId);
+        $initConnectionAloha = $alohaRepository->initConnectionDB();
+        if ($initConnectionAloha['status']) {
+            $checkTransComplete = $alohaRepository->checkCompleteStoreAloha($plant->customer_code, $this->date);
+            if ($checkTransComplete != 0) {
+                $this->getTranctionTax($plantPosId, $this->date, $plant->customer_code, $sendTax);
             } else {
-                // adding error result
-                HistorySendTax::addHistoryFailed($this->date, $sendTax->id, 'Check complete result transaction failed');
-            }
-
-        }else {
-            // adding error api complete
-            HistorySendTax::addHistoryFailed($this->date, $sendTax->id, 'Check complete transaction failed');
-        }
-    }
-
-    public function getTranctionTax($param, $sendTax)
-    {
-        // get data
-        $url = config('qsrki.api.aloha.url') . config('qsrki.api.aloha.tax_transaction');
-
-        $response = Http::post($url, $param);
-        if ($response->successful()) {
-            $resp = $response->json();
-
-            if ($resp['status'] == 'success') {
-
-                if ($resp['data'] != 'null' && $resp['data'] != '') {
-                    $taxTransaction = $resp['data'];
-
-                    if (sizeof($taxTransaction) > 0) {
-                        $date_fn = Helper::DateConvertFormat($this->date, 'Y/m/d', 'Ymd');
-                        // generate file excel
-                        $fileName = $sendTax->prefix_name_store . '_' . $date_fn;
-                        $fileType = '.csv';
-                        $fileNameUploaded = $fileName . $fileType;
-                        $filePath = 'tax/csv/';
-                        $fileUpload = storage_path('app/public/' . $filePath . $fileNameUploaded);
-
-                        if (Excel::store(new GenerateTransaction($taxTransaction), $filePath . $fileNameUploaded, 'public')) {
-                            // get amount transaction
-                            $amount = 0;
-                            foreach ($taxTransaction as $v) {
-                                $amount += $v['total'];
-                            }
-                            $this->uploadToFTP($sendTax->id, $fileUpload, $fileNameUploaded, $amount);
-
-                        } else {
-                            // adding error generate file sales transaction
-                            HistorySendTax::addHistoryFailed($this->date, $sendTax->id, 'Generate file csv failed');
-                        }
-
-                    } else{
-                        // adding error null transaction
-                        HistorySendTax::addHistoryFailed($this->date, $sendTax->id, 'Transactions zero');
-                    }
-
-                } else {
-                    // adding error null transaction
-                    HistorySendTax::addHistoryFailed($this->date, $sendTax->id, 'Transactions zero');
-                }
-            } else {
-                // adding error result transaction
-                HistorySendTax::addHistoryFailed($this->date, $sendTax->id, 'Result transaction failed');
+                HistorySendTax::addHistoryFailed($sendTax->company_id, $this->date, $sendTax->id, 'Transaction not complete');
             }
         } else {
-            // adding error get transaction
-            HistorySendTax::addHistoryFailed($this->date, $sendTax->id, 'Get transaction failed');
+            HistorySendTax::addHistoryFailed($sendTax->company_id, $this->date, $sendTax->id, 'Init connection aloha failed: '. $initConnectionAloha['message']);
         }
     }
 
-    public function uploadToFTP($id, $fileUpload, $fileNameUploaded, $amount)
+    public function getTranctionTax($plantPosId, $date, $customerCode, $sendTax)
+    {
+        $alohaRepository = new AlohaRepository($plantPosId);
+        $initConnectionAloha = $alohaRepository->initConnectionDB();
+        if ($initConnectionAloha['status']) {
+            $taxTransactions = $alohaRepository->getTaxTransaction($customerCode, $date);
+            if (sizeof($taxTransactions) > 0) {
+                $date_fn = Helper::DateConvertFormat($this->date, 'Y/m/d', 'Ymd');
+                // generate file excel
+                $fileName = $sendTax->prefix_name_store . '_' . $date_fn;
+                $fileType = '.csv';
+                $fileNameUploaded = $fileName . $fileType;
+                $filePath = 'tax/csv/';
+                $fileUpload = storage_path('app/public/' . $filePath . $fileNameUploaded);
+
+                if (Excel::store(new GenerateTransaction($taxTransactions), $filePath . $fileNameUploaded, 'public')) {
+                    // get amount transaction
+                    $amount = 0;
+                    foreach ($taxTransactions as $v) {
+                        $amount += $v->Total;
+                    }
+                    $this->uploadToFTP($sendTax, $fileUpload, $fileNameUploaded, $amount);
+
+                } else {
+                    // adding error generate file sales transaction
+                    HistorySendTax::addHistoryFailed($sendTax->company_id, $this->date, $sendTax->id, 'Generate file csv failed');
+                }
+            } else {
+                HistorySendTax::addHistoryFailed($sendTax->company_id, $this->date, $sendTax->id, 'Transactions zero');
+            }
+        } else {
+            HistorySendTax::addHistoryFailed($sendTax->company_id, $this->date, $sendTax->id, 'Init connection aloha failed: '. $initConnectionAloha['message']);
+        }
+    }
+
+    public function uploadToFTP($sendTax, $fileUpload, $fileNameUploaded, $amount)
     {
         try {
             // setup ftp / sftp
-            $configFtp = SendTax::getConfigFtp($id);
+            $configFtp = SendTax::getConfigFtp($sendTax->id);
 
             if ($configFtp['driver'] != 'sftp') {
                 // ftp
@@ -171,19 +134,20 @@ class SendTaxFtp implements ShouldQueue
             if ($path != '') {
                 // success
                 $historySendTax = new HistorySendTax;
+                $historySendTax->company_id = $sendTax->company_id;
                 $historySendTax->date = $this->date;
-                $historySendTax->send_tax_id = $id;
+                $historySendTax->send_tax_id = $sendTax->id;
                 $historySendTax->amount = $amount;
                 $historySendTax->status = 1;
                 $historySendTax->description = '';
                 $historySendTax->save();
             } else {
                 // error
-                HistorySendTax::addHistoryFailed($this->date, $id, 'Send file to ftp / sftp failed');
+                HistorySendTax::addHistoryFailed($sendTax->company_id, $this->date, $sendTax->id, 'Send file to ftp / sftp failed');
             }
         } catch (\Throwable $t) {
             // adding history send tax error
-            HistorySendTax::addHistoryFailed($this->date, $id, $t->getMessage());
+            HistorySendTax::addHistoryFailed($sendTax->company_id, $this->date, $sendTax->id, $t->getMessage());
         }
     }
 

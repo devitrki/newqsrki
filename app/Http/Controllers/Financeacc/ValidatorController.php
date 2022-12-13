@@ -5,13 +5,16 @@ namespace App\Http\Controllers\Financeacc;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Validation\Rule;
-use DataTables;
+use Yajra\DataTables\DataTables;
+
 use App\Library\Helper;
 
 use App\Models\Financeacc\AssetValidator;
 use App\Models\Financeacc\AssetValidatorMapping;
 use App\Models\User;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx\Rels;
 
 class ValidatorController extends Controller
 {
@@ -22,18 +25,27 @@ class ValidatorController extends Controller
         return view('financeacc.asset-validator', $dataview)->render();
     }
 
-    public function dtble()
+    public function dtble(Request $request)
     {
-        $query = DB::table('asset_validators')->select(['id', 'name']);
+        $userAuth = $request->get('userAuth');
+
+        $query = DB::table('asset_validators')
+                    ->where('company_id', $userAuth->company_id_selected)
+                    ->select(['id', 'name']);
+
         return Datatables::of($query)->addIndexColumn()->make();
     }
 
     public function select(Request $request)
     {
-        $query = DB::table('asset_validators')->select(['id', 'name as text']);
+        $userAuth = $request->get('userAuth');
+
+        $query = DB::table('asset_validators')
+                    ->where('company_id', $userAuth->company_id_selected)
+                    ->select(['id', 'name as text']);
 
         if ($request->has('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            $query->whereRaw("LOWER(name) like '%" . strtolower($request->search) . "%'");
         }
 
         if ($request->has('limit')) {
@@ -49,7 +61,7 @@ class ValidatorController extends Controller
         if ($request->has('ext')) {
             if ($request->query('ext') == 'all') {
                 if (!is_array($data)) {
-                    $data->prepend(['id' => 0, 'text' => \Lang::get('All')]);
+                    $data->prepend(['id' => 0, 'text' => Lang::get('All')]);
                 }
             }
         }
@@ -63,14 +75,17 @@ class ValidatorController extends Controller
                         'name' => 'required|unique:asset_validators,name',
                     ]);
 
+        $userAuth = $request->get('userAuth');
+
         $assetValidator = new AssetValidator;
+        $assetValidator->company_id = $userAuth->company_id_selected;
         $assetValidator->name = $request->name;
         if ($assetValidator->save()) {
             $stat = 'success';
-            $msg = \Lang::get("message.save.success", ["data" => \Lang::get("asset validator")]);
+            $msg = Lang::get("message.save.success", ["data" => Lang::get("asset validator")]);
         } else {
             $stat = 'failed';
-            $msg = \Lang::get("message.save.failed", ["data" => \Lang::get("asset validator")]);
+            $msg = Lang::get("message.save.failed", ["data" => Lang::get("asset validator")]);
         }
 
         return response()->json( Helper::resJSON( $stat, $msg ) );
@@ -86,11 +101,11 @@ class ValidatorController extends Controller
         $assetValidator->name = $request->name;
         if ($assetValidator->save()) {
             $stat = 'success';
-            $msg = \Lang::get("message.update.success", ["data" => \Lang::get("asset validator")]);
+            $msg = Lang::get("message.update.success", ["data" => Lang::get("asset validator")]);
         } else {
             DB::rollBack();
             $stat = 'failed';
-            $msg = \Lang::get("message.update.failed", ["data" => \Lang::get("asset validator")]);
+            $msg = Lang::get("message.update.failed", ["data" => Lang::get("asset validator")]);
         }
 
         return response()->json( Helper::resJSON( $stat, $msg ) );
@@ -105,10 +120,10 @@ class ValidatorController extends Controller
 
         if ($assetValidator->delete()) {
             $stat = 'success';
-            $msg = \Lang::get("message.destroy.success", ["data" => \Lang::get("asset validator")]);
+            $msg = Lang::get("message.destroy.success", ["data" => Lang::get("asset validator")]);
         } else {
             $stat = 'failed';
-            $msg = \Lang::get("message.destroy.failed", ["data" => \Lang::get("asset validator")]);
+            $msg = Lang::get("message.destroy.failed", ["data" => Lang::get("asset validator")]);
         }
         return response()->json( Helper::resJSON( $stat, $msg ) );
     }
@@ -162,16 +177,19 @@ class ValidatorController extends Controller
                         'pic' => 'required'
                     ]);
 
+        $userAuth = $request->get('userAuth');
+
         $assetValidatorMapping = new AssetValidatorMapping;
+        $assetValidatorMapping->company_id = $userAuth->company_id_selected;
         $assetValidatorMapping->plant_id = $request->dc;
         $assetValidatorMapping->pic_validators = $request->pic;
         $assetValidatorMapping->asset_validator_id = $request->asset_validator_id;
         if ($assetValidatorMapping->save()) {
             $stat = 'success';
-            $msg = \Lang::get("message.save.success", ["data" => \Lang::get("validator pic dc")]);
+            $msg = Lang::get("message.save.success", ["data" => Lang::get("validator pic dc")]);
         } else {
             $stat = 'failed';
-            $msg = \Lang::get("message.save.failed", ["data" => \Lang::get("validator pic dc")]);
+            $msg = Lang::get("message.save.failed", ["data" => Lang::get("validator pic dc")]);
         }
 
         return response()->json( Helper::resJSON( $stat, $msg ) );
@@ -189,11 +207,11 @@ class ValidatorController extends Controller
         $assetValidatorMapping->pic_validators = $request->pic;
         if ($assetValidatorMapping->save()) {
             $stat = 'success';
-            $msg = \Lang::get("message.update.success", ["data" => \Lang::get("validator pic dc")]);
+            $msg = Lang::get("message.update.success", ["data" => Lang::get("validator pic dc")]);
         } else {
             DB::rollBack();
             $stat = 'failed';
-            $msg = \Lang::get("message.update.failed", ["data" => \Lang::get("validator pic dc")]);
+            $msg = Lang::get("message.update.failed", ["data" => Lang::get("validator pic dc")]);
         }
 
         return response()->json( Helper::resJSON( $stat, $msg ) );
@@ -205,10 +223,10 @@ class ValidatorController extends Controller
 
         if ($assetValidatorMapping->delete()) {
             $stat = 'success';
-            $msg = \Lang::get("message.destroy.success", ["data" => \Lang::get("validator pic dc")]);
+            $msg = Lang::get("message.destroy.success", ["data" => Lang::get("validator pic dc")]);
         } else {
             $stat = 'failed';
-            $msg = \Lang::get("message.destroy.failed", ["data" => \Lang::get("validator pic dc")]);
+            $msg = Lang::get("message.destroy.failed", ["data" => Lang::get("validator pic dc")]);
         }
         return response()->json( Helper::resJSON( $stat, $msg ) );
     }

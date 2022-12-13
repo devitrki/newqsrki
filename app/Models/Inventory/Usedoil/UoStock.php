@@ -69,4 +69,24 @@ class UoStock extends Model implements Auditable
         return $updateStock;
     }
 
+    // report
+    public static function getDataReport($companyId, $plantId)
+    {
+        $stocks = DB::table('uo_stocks')
+                        ->join('uo_materials', 'uo_materials.code', 'uo_stocks.material_code')
+                        ->where('uo_stocks.company_id', $companyId)
+                        ->where('uo_stocks.plant_id', $plantId)
+                        ->select('uo_materials.code', 'uo_materials.name', 'uo_materials.uom', 'uo_stocks.stock');
+
+        $header = [
+            'plant' => Plant::getCodeById($plantId) . ' - ' . Plant::getShortNameById($plantId),
+        ];
+
+        return [
+            'count' => $stocks->count(),
+            'header' => $header,
+            'items' => $stocks->get()
+        ];
+    }
+
 }

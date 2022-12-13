@@ -17,11 +17,11 @@ class PettycashServiceSapImpl implements PettycashService
 {
     public function uploadPettyCash($companyId, $picFa, $receiveDate, $idSubmiteds)
     {
-        $sapCodeComp = Company::getConfigByKey($companyId, 'sap_code');
+        $sapCodeComp = Company::getConfigByKey($companyId, 'SAP_CODE');
         if (!$sapCodeComp || $sapCodeComp == '') {
             return [
                 "status" => false,
-                "message" => Lang::get("Please set sap_code in company configuration")
+                "message" => Lang::get("Please set SAP_CODE in company configuration")
             ];
         }
 
@@ -131,7 +131,7 @@ class PettycashServiceSapImpl implements PettycashService
                 'items' => $dataSubmited
             ];
 
-            $sapRepository = new SapRepositorySapImpl(true);
+            $sapRepository = new SapRepositorySapImpl($companyId, true);
             $sapResponse = $sapRepository->uploadPettyCash($data_posted);
             if ($sapResponse['status']) {
                 $resSap = $sapResponse['response'];

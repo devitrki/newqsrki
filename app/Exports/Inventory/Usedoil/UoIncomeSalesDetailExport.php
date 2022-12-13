@@ -8,13 +8,15 @@ use App\Models\Plant;
 
 class UoIncomeSalesDetailExport implements WithMultipleSheets
 {
+    protected $companyId;
     protected $plant;
     protected $dateFrom;
     protected $dateUntil;
     protected $userId;
 
-    function __construct($plant, $dateFrom, $dateUntil, $userId)
+    function __construct($companyId, $plant, $dateFrom, $dateUntil, $userId)
     {
+        $this->companyId = $companyId;
         $this->plant = $plant;
         $this->dateFrom = $dateFrom;
         $this->dateUntil = $dateUntil;
@@ -31,7 +33,7 @@ class UoIncomeSalesDetailExport implements WithMultipleSheets
         if($this->plant != '0'){
             $plants = DB::table('plants')->where('id', $this->plant)->select('id')->get();
         } else {
-            $plants = Plant::getPlantAuthUser($this->userId);
+            $plants = Plant::getPlantAuthUser($this->companyId, $this->userId);
         }
 
         foreach ($plants as $plant) {
@@ -47,7 +49,7 @@ class UoIncomeSalesDetailExport implements WithMultipleSheets
             }
 
             $plantCode = Plant::getCodeById($plant->id);
-            $sheets[] = new UoIncomeSalesDetailSheet($plant->id, $plantCode, $this->dateFrom, $this->dateUntil, $this->userId);
+            $sheets[] = new UoIncomeSalesDetailSheet($this->companyId, $plant->id, $plantCode, $this->dateFrom, $this->dateUntil, $this->userId);
         }
 
         return $sheets;

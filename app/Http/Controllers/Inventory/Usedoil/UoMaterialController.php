@@ -32,20 +32,23 @@ class UoMaterialController extends Controller
         return Datatables::of($query)->addIndexColumn()->make();
     }
 
-    public function dtbleQty($inputName, $plantId)
+    public function dtbleQty(Request $request, $inputName, $plantId)
     {
         $data = [];
         if( $plantId != '0' ){
+            $userAuth = $request->get('userAuth');
+
             $plant = DB::table('plants')
                         ->where('id', $plantId)
                         ->first();
 
             $query = DB::table('uo_materials')
+                        ->where('company_id', $userAuth->company_id_selected)
                         ->select('id', 'code', 'name', 'uom')
                         ->get();
 
             foreach ($query as $q) {
-                $stock = UoStock::getStockCurrent($plant->company_id, $plantId, $q->code);
+                $stock = UoStock::getStockCurrent($userAuth->company_id_selected, $plantId, $q->code);
                 $data[] = [
                     'id' => $q->id,
                     'code' => $q->code,

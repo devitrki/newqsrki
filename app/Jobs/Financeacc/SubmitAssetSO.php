@@ -11,6 +11,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Lang;
 
 use App\Mail\Financeacc\Assets\NotificationSelisihAssetSo;
 
@@ -22,6 +23,7 @@ class SubmitAssetSO implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    protected $companyId;
     protected $typePlant;
 
     /**
@@ -29,8 +31,9 @@ class SubmitAssetSO implements ShouldQueue
      *
      * @return void
      */
-    public function __construct($typePlant)
+    public function __construct($companyId, $typePlant)
     {
+        $this->companyId = $companyId;
         $this->typePlant = $typePlant;
     }
 
@@ -42,14 +45,16 @@ class SubmitAssetSO implements ShouldQueue
     public function handle()
     {
         try {
+            $companyId = $this->companyId;
             $typePlant = $this->typePlant;
 
             // get asset so id this periode
-            $assetSoId = $this->getAssetSoIdSubmit();
+            $assetSoId = $this->getAssetSoIdSubmit($companyId);
 
             if ($assetSoId != 0) {
 
                 $assetSo = DB::table('asset_sos')
+                            ->where('company_id', $companyId)
                             ->where('id', $assetSoId)
                             ->first();
 
@@ -70,9 +75,9 @@ class SubmitAssetSO implements ShouldQueue
                     }
 
                     // update status so asset outlet false
-                    $statusAssetSoOutlet = Configuration::getValueByKeyFor('financeacc', 'status_outlet_asset_so');
+                    $statusAssetSoOutlet = Configuration::getValueCompByKeyFor($companyId, 'financeacc', 'status_outlet_asset_so');
                     if ($statusAssetSoOutlet != 'Not Running') {
-                        Configuration::setValueByKeyFor('financeacc', 'status_outlet_asset_so', 'Not Running');
+                        Configuration::setValueCompByKeyFor($companyId, 'financeacc', 'status_outlet_asset_so', 'Not Running');
                     }
 
                     // check send selisih to depart asset
@@ -84,7 +89,7 @@ class SubmitAssetSO implements ShouldQueue
                     $listSendAm = json_decode($assetSo->send_am_outlet);
 
                     // subject email
-                    $subject = \Lang::get('Result Stock Opname Asset Outlet Periode ') . ' ' . $periode;
+                    $subject = Lang::get('Result Stock Opname Asset Outlet Periode ') . ' ' . $periode;
 
                 } else {
 
@@ -100,9 +105,9 @@ class SubmitAssetSO implements ShouldQueue
                     }
 
                     // update status so asset dc false
-                    $statusAssetSoDC = Configuration::getValueByKeyFor('financeacc', 'status_dc_asset_so');
+                    $statusAssetSoDC = Configuration::getValueCompByKeyFor($companyId, 'financeacc', 'status_dc_asset_so');
                     if ($statusAssetSoDC != 'Not Running') {
-                        Configuration::setValueByKeyFor('financeacc', 'status_dc_asset_so', 'Not Running');
+                        Configuration::setValueCompByKeyFor($companyId, 'financeacc', 'status_dc_asset_so', 'Not Running');
                     }
 
                     // check send selisih to depart asset
@@ -114,7 +119,7 @@ class SubmitAssetSO implements ShouldQueue
                     $listSendAm = json_decode($assetSo->send_am_dc);
 
                     // subject email
-                    $subject = \Lang::get('Result Stock Opname Asset DC Periode ') . ' ' . $periode;
+                    $subject = Lang::get('Result Stock Opname Asset DC Periode ') . ' ' . $periode;
                 }
 
                 // send email selisih to depart asset if false
@@ -125,7 +130,7 @@ class SubmitAssetSO implements ShouldQueue
                         $fileSelisihAssetSo = AssetSo::GenerateSelisihSoExcel($assetSo->id, $typePlant, 0);
 
                         // send selisih to depart asset
-                        $emailDepartAsset = Configuration::getValueByKeyFor('financeacc', 'email_depart_asset');
+                        $emailDepartAsset = Configuration::getValueCompByKeyFor($companyId, 'financeacc', 'email_depart_asset');
                         $to = explode(',', $emailDepartAsset);
                         $cc = [];
 
@@ -198,6 +203,8 @@ class SubmitAssetSO implements ShouldQueue
                             // create file excel selisih
                             $fileSelisihAssetSo = AssetSo::GenerateSelisihSoExcel($assetSo->id, $typePlant, $amNotYetSend);
 
+                            Log::info($fileSelisihAssetSo);
+
                             // send selisih to depart asset
                             $to = [$userAm->email];
                             $cc = [];
@@ -264,13 +271,14 @@ class SubmitAssetSO implements ShouldQueue
         }
     }
 
-    public function getAssetSoIdSubmit()
+    public function getAssetSoIdSubmit($companyId)
     {
         $periodeMonth = Date('n');
         $periodeYear = Date('Y');
 
         $qAssetSo = DB::table('asset_sos')
                         ->select('id')
+                        ->where('company_id', $companyId)
                         ->where('month', $periodeMonth)
                         ->where('year', $periodeYear);
 

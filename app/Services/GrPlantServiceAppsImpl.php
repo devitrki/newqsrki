@@ -16,7 +16,7 @@ use App\Models\Inventory\GrPlantItem;
 
 class GrPlantServiceAppsImpl implements GrPlantService
 {
-    public function getOutstandingPoPlant($plantId)
+    public function getOutstandingPoPlant($plantId, $filter = true)
     {
         $status = true;
         $message = '';
@@ -30,26 +30,36 @@ class GrPlantServiceAppsImpl implements GrPlantService
         ];
 
         $sapRepository = new SapRepositoryAppsImpl();
-        $sapResponse = $sapRepository->getOutstandingPoPlant($param);
 
         $outstanding = [];
 
-        if ($sapResponse['status']) {
-            $outstanding_sap = $sapResponse['response'];
+        if ($filter) {
+            $sapResponse = $sapRepository->getOutstandingPoPlant($param);
 
-            if($outstanding_sap){
-                foreach ($outstanding_sap as $v) {
-                    $plant_from = Plant::getShortNameByCode($v['code_from']);
-                    $plant_to = Plant::getShortNameByCode($v['code_to']);
-                    $outstanding[] = [
-                        'code_from' => $v['code_from'],
-                        'code_to' => $v['code_to'],
-                        'plant_from' => $plant_from,
-                        'plant_to' => $plant_to,
-                        'document_number' => $v['document_number'],
-                        'mutation_date' => $v['mutation_date'],
-                    ];
+            if ($sapResponse['status']) {
+                $outstanding_sap = $sapResponse['response'];
+
+                if($outstanding_sap){
+                    foreach ($outstanding_sap as $v) {
+                        $plant_from = Plant::getShortNameByCode($v['code_from']);
+                        $plant_to = Plant::getShortNameByCode($v['code_to']);
+                        $outstanding[] = [
+                            'code_from' => $v['code_from'],
+                            'code_to' => $v['code_to'],
+                            'plant_from' => $plant_from,
+                            'plant_to' => $plant_to,
+                            'document_number' => $v['document_number'],
+                            'mutation_date' => $v['mutation_date'],
+                        ];
+                    }
                 }
+            }
+
+        } else {
+            $sapResponse = $sapRepository->getOutstandingPoPlantReport($param);
+            if ($sapResponse['status']) {
+                $outstanding_sap = $sapResponse['response'];
+                $outstanding = $outstanding_sap;
             }
         }
 

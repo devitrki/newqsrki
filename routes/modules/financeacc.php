@@ -3,6 +3,16 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Financeacc\PettycashController;
 use App\Http\Controllers\Financeacc\MassClearingController;
+
+use App\Http\Controllers\Financeacc\AssetController;
+use App\Http\Controllers\Financeacc\ValidatorController;
+use App\Http\Controllers\Financeacc\AdminDepartController;
+use App\Http\Controllers\Financeacc\AssetMutationController;
+use App\Http\Controllers\Financeacc\AssetMutationManualController;
+use App\Http\Controllers\Financeacc\PrintSJController;
+use App\Http\Controllers\Financeacc\AssetRequestMutationController;
+use App\Http\Controllers\Financeacc\AssetSoController;
+
 use App\Http\Controllers\Financeacc\ConfigurationController;
 
 /*
@@ -14,84 +24,84 @@ use App\Http\Controllers\Financeacc\ConfigurationController;
 |
 */
 
-// Route::group(['prefix' => 'asset'], function () {
-//     Route::resource('list', 'Financeacc\AssetController')->except(['show']);
-//     Route::get('list/dtble', 'Financeacc\AssetController@dtble');
-//     Route::post('list/sync', 'Financeacc\AssetController@sync');
-//     Route::get('list/dtble', 'Financeacc\AssetController@dtble');
-//     Route::post('list/check', 'Financeacc\AssetController@checkAssetMutation');
-//     Route::post('list/check/request', 'Financeacc\AssetController@checkRequestAssetMutation');
-//     Route::post('list/cancel', 'Financeacc\AssetController@cancelAssetMutation');
-//     Route::post('list/cancel/request', 'Financeacc\AssetController@cancelRequestAssetMutation');
-//     Route::get('costcenter/{plant_id}', 'Financeacc\AssetController@selectCostCenter');
-//     Route::post('list/request', 'Financeacc\AssetController@storeRequest');
+Route::group(['prefix' => 'asset'], function () {
+    Route::resource('list', AssetController::class)->except(['show']);
+    Route::get('list/dtble', [AssetController::class, 'dtble']);
+    Route::post('list/sync', [AssetController::class, 'sync']);
+    Route::get('list/dtble', [AssetController::class, 'dtble']);
+    Route::post('list/check', [AssetController::class, 'checkAssetMutation']);
+    Route::post('list/check/request', [AssetController::class, 'checkRequestAssetMutation']);
+    Route::post('list/cancel', [AssetController::class, 'cancelAssetMutation']);
+    Route::post('list/cancel/request', [AssetController::class, 'cancelRequestAssetMutation']);
+    Route::get('costcenter/{plant_id}', [AssetController::class, 'selectCostCenter']);
+    Route::post('list/request', [AssetController::class, 'storeRequest']);
 
-//     // check
-//     Route::get('check/{plant}', 'Financeacc\AssetController@check');
+    // check
+    Route::get('check/{plant}', [AssetController::class, 'check']);
 
-//     Route::resource('mutation', 'Financeacc\AssetMutationController')->except(['show']);
-//     Route::get('mutation/dtble', 'Financeacc\AssetMutationController@dtble');
-//     Route::post('mutation/approve/{id}', 'Financeacc\AssetMutationController@approveAssetMutation');
-//     Route::post('mutation/unapprove/{id}', 'Financeacc\AssetMutationController@unapproveAssetMutation');
-//     Route::post('mutation/approve-request', 'Financeacc\AssetMutationController@approveAssetRequest');
-//     Route::post('mutation/unapprove-request', 'Financeacc\AssetMutationController@unapproveAssetRequest');
-//     Route::post('mutation/assign', 'Financeacc\AssetMutationController@assignValidator');
-//     Route::post('mutation/confirmation', 'Financeacc\AssetMutationController@confirmationValidator');
-//     Route::post('mutation/reject-validator', 'Financeacc\AssetMutationController@rejectValidator');
-//     Route::post('mutation/approve-am', 'Financeacc\AssetMutationController@approveAMAssetMutation');
-//     Route::post('mutation/unapprove-am', 'Financeacc\AssetMutationController@unapproveAMAssetMutation');
-//     Route::post('mutation/send', 'Financeacc\AssetMutationController@send');
-//     Route::post('mutation/reject-send', 'Financeacc\AssetMutationController@rejectSend');
-//     Route::post('mutation/accept', 'Financeacc\AssetMutationController@accept');
-//     Route::post('mutation/reject-accept', 'Financeacc\AssetMutationController@rejectAccept');
-//     Route::get('mutation/preview', 'Financeacc\AssetMutationController@preview');
+    Route::resource('mutation', AssetMutationController::class)->except(['show']);
+    Route::get('mutation/dtble', [AssetMutationController::class, 'dtble']);
+    Route::post('mutation/approve/{id}', [AssetMutationController::class, 'approveAssetMutation']);
+    Route::post('mutation/unapprove/{id}', [AssetMutationController::class, 'unapproveAssetMutation']);
+    Route::post('mutation/approve-request', [AssetMutationController::class, 'approveAssetRequest']);
+    Route::post('mutation/unapprove-request', [AssetMutationController::class, 'unapproveAssetRequest']);
+    Route::post('mutation/assign', [AssetMutationController::class, 'assignValidator']);
+    Route::post('mutation/confirmation', [AssetMutationController::class, 'confirmationValidator']);
+    Route::post('mutation/reject-validator', [AssetMutationController::class, 'rejectValidator']);
+    Route::post('mutation/approve-am', [AssetMutationController::class, 'approveAMAssetMutation']);
+    Route::post('mutation/unapprove-am', [AssetMutationController::class, 'unapproveAMAssetMutation']);
+    Route::post('mutation/send', [AssetMutationController::class, 'send']);
+    Route::post('mutation/reject-send', [AssetMutationController::class, 'rejectSend']);
+    Route::post('mutation/accept', [AssetMutationController::class, 'accept']);
+    Route::post('mutation/reject-accept', [AssetMutationController::class, 'rejectAccept']);
+    Route::get('mutation/preview', [AssetMutationController::class, 'preview']);
 
-//     Route::resource('mutationmanual', 'Financeacc\AssetMutationManualController')->except(['show']);
-//     Route::get('mutationmanual/dtble', 'Financeacc\AssetMutationManualController@dtble');
-//     Route::get('mutationmanual/confirm/{id}', 'Financeacc\AssetMutationManualController@confirm');
+    Route::resource('mutationmanual', AssetMutationManualController::class)->except(['show']);
+    Route::get('mutationmanual/dtble', [AssetMutationManualController::class, 'dtble']);
+    Route::get('mutationmanual/confirm/{id}', [AssetMutationManualController::class, 'confirm']);
 
-//     Route::resource('so', 'Financeacc\AssetSoController')->except(['show']);
-//     Route::get('so/select/costcenter/{plant_id}', 'Financeacc\AssetSoController@selectCostCenter');
-//     Route::get('so/download', 'Financeacc\AssetSoController@download');
-//     Route::get('so/preview', 'Financeacc\AssetSoController@preview');
-//     Route::post('so/upload', 'Financeacc\AssetSoController@upload');
-//     Route::get('so/select/periode', 'Financeacc\AssetSoController@selectPeriode');
-//     Route::get('so/generate/{type}', 'Financeacc\AssetSoController@manualGenerateSO');
-//     Route::get('so/submit/{type}', 'Financeacc\AssetSoController@manualSubmitSO');
-//     Route::get('so/check', 'Financeacc\AssetSoController@checkCountAssetSo');
-//     Route::get('so/fix', 'Financeacc\AssetSoController@fixQtyWeb');
+    Route::resource('so', AssetSoController::class)->except(['show']);
+    Route::get('so/select/costcenter/{plant_id}', [AssetSoController::class, 'selectCostCenter']);
+    Route::get('so/download', [AssetSoController::class, 'download']);
+    Route::get('so/preview', [AssetSoController::class, 'preview']);
+    Route::post('so/upload', [AssetSoController::class, 'upload']);
+    Route::get('so/select/periode', [AssetSoController::class, 'selectPeriode']);
+    Route::get('so/generate/{type}', [AssetSoController::class, 'manualGenerateSO']);
+    Route::get('so/submit/{type}', [AssetSoController::class, 'manualSubmitSO']);
+    Route::get('so/check', [AssetSoController::class, 'checkCountAssetSo']);
+    Route::get('so/fix', [AssetSoController::class, 'fixQtyWeb']);
 
-//     // mapping validator
-//     Route::resource('validator', 'Financeacc\ValidatorController')->except(['show']);
-//     Route::get('validator/dtble', 'Financeacc\ValidatorController@dtble');
-//     Route::get('validator/select', 'Financeacc\ValidatorController@select');
+    // mapping validator
+    Route::resource('validator', ValidatorController::class)->except(['show']);
+    Route::get('validator/dtble', [ValidatorController::class, 'dtble']);
+    Route::get('validator/select', [ValidatorController::class, 'select']);
 
-//     Route::get('validator/dtble/pic/{id}', 'Financeacc\ValidatorController@dtblePic');
-//     Route::post('validator/pic', 'Financeacc\ValidatorController@storePic');
-//     Route::put('validator/pic/{id}', 'Financeacc\ValidatorController@updatePic');
-//     Route::delete('validator/pic/{id}', 'Financeacc\ValidatorController@destroyPic');
+    Route::get('validator/dtble/pic/{id}', [ValidatorController::class, 'dtblePic']);
+    Route::post('validator/pic', [ValidatorController::class, 'storePic']);
+    Route::put('validator/pic/{id}', [ValidatorController::class, 'updatePic']);
+    Route::delete('validator/pic/{id}', [ValidatorController::class, 'destroyPic']);
 
-//     // asset request mutation
-//     Route::resource('request', 'Financeacc\AssetRequestMutationController')->except(['show']);
-//     Route::get('request/dtble', 'Financeacc\AssetRequestMutationController@dtble');
-//     Route::get('request/select', 'Financeacc\AssetRequestMutationController@select');
-//     Route::post('request/assign', 'Financeacc\AssetRequestMutationController@assignValidator');
-//     Route::post('request/confirmation', 'Financeacc\AssetRequestMutationController@confirmationValidator');
-//     Route::post('request/send', 'Financeacc\AssetRequestMutationController@sendAssetRequest');
-//     Route::post('request/reject-validator', 'Financeacc\AssetRequestMutationController@rejectValidator');
-//     Route::post('request/approve', 'Financeacc\AssetRequestMutationController@approveAssetRequest');
-//     Route::post('request/unapprove', 'Financeacc\AssetRequestMutationController@unapproveAssetRequest');
+    // asset request mutation
+    Route::resource('request', AssetRequestMutationController::class)->except(['show']);
+    Route::get('request/dtble', [AssetRequestMutationController::class, 'dtble']);
+    Route::get('request/select', [AssetRequestMutationController::class, 'select']);
+    Route::post('request/assign', [AssetRequestMutationController::class, 'assignValidator']);
+    Route::post('request/confirmation', [AssetRequestMutationController::class, 'confirmationValidator']);
+    Route::post('request/send', [AssetRequestMutationController::class, 'sendAssetRequest']);
+    Route::post('request/reject-validator', [AssetRequestMutationController::class, 'rejectValidator']);
+    Route::post('request/approve', [AssetRequestMutationController::class, 'approveAssetRequest']);
+    Route::post('request/unapprove', [AssetRequestMutationController::class, 'unapproveAssetRequest']);
 
-//     // asset mapping user admin department
-//     Route::resource('admin-depart', 'Financeacc\AdminDepartController')->except(['show']);
-//     Route::get('admin-depart/dtble', 'Financeacc\AdminDepartController@dtble');
-//     Route::get('admin-depart/select', 'Financeacc\AdminDepartController@select');
+    // asset mapping user admin department
+    Route::resource('admin-depart', AdminDepartController::class)->except(['show']);
+    Route::get('admin-depart/dtble', [AdminDepartController::class, 'dtble']);
+    Route::get('admin-depart/select', [AdminDepartController::class, 'select']);
 
-//     // asset print sj
-//     Route::resource('printsj', 'Financeacc\PrintSJController')->except(['show']);
-//     Route::get('printsj/dtble', 'Financeacc\PrintSJController@dtble');
-//     Route::get('printsj/preview', 'Financeacc\PrintSJController@preview');
-// });
+    // asset print sj
+    Route::resource('printsj', PrintSJController::class)->except(['show']);
+    Route::get('printsj/dtble', [PrintSJController::class, 'dtble']);
+    Route::get('printsj/preview', [PrintSJController::class, 'preview']);
+});
 
 Route::resource('pettycash', PettycashController::class)->except(['show']);
 Route::get('pettycash/dtble', [PettycashController::class, 'dtble']);

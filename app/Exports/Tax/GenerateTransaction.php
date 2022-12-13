@@ -5,6 +5,7 @@ namespace App\Exports\Tax;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Lang;
 use App\Models\Tax\SendTax;
 
 class GenerateTransaction implements FromView, ShouldAutoSize
@@ -19,7 +20,7 @@ class GenerateTransaction implements FromView, ShouldAutoSize
     public function view(): View
     {
         $report_data = [
-            'title' => \Lang::get('Trancsaction Sales Richeese Factory'),
+            'title' => Lang::get('Trancsaction Sales Richeese Factory'),
             'data' => $this->data
         ];
 

@@ -139,7 +139,22 @@ class Helper
      */
     public static function getMonthByNumberMonth($numberOfMonth)
     {
-        $months = ['null', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        // $months = ['null', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        $months = [
+            'null',
+            'January',
+            'February',
+            'March',
+            'April',
+            'May',
+            'June',
+            'July',
+            'August',
+            'September',
+            'October',
+            'November',
+            'Desember'
+        ];
         return $months[$numberOfMonth];
     }
 

@@ -7,18 +7,21 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Lang;
 use App\Models\Inventory\Usedoil\UoMovementItem;
 
 class UoIncomeSalesDetailSheet implements FromView, ShouldAutoSize, WithTitle
 {
+    protected $companyId;
     protected $plantId;
     protected $title;
     protected $dateFrom;
     protected $dateUntil;
     protected $userId;
 
-    function __construct($plantId, $title, $dateFrom, $dateUntil, $userId)
+    function __construct($companyId, $plantId, $title, $dateFrom, $dateUntil, $userId)
     {
+        $this->companyId = $companyId;
         $this->plantId = $plantId;
         $this->title = $title;
         $this->dateFrom = $dateFrom;
@@ -29,8 +32,8 @@ class UoIncomeSalesDetailSheet implements FromView, ShouldAutoSize, WithTitle
     public function view(): View
     {
         $report_data = [
-            'title' => \Lang::get('Income Sales Detail Used Oil Report'),
-            'data' => UoMovementItem::getDataReport($this->plantId, $this->dateFrom, $this->dateUntil, $this->userId)
+            'title' => Lang::get('Income Sales Detail Used Oil Report'),
+            'data' => UoMovementItem::getDataReport($this->companyId, $this->plantId, $this->dateFrom, $this->dateUntil, $this->userId)
         ];
 
         return view('inventory.usedoil.excel.uo-income-sales-detail-excel', $report_data);

@@ -5,7 +5,8 @@ namespace App\Http\Controllers\Financeacc;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use DataTables;
+use Illuminate\Support\Facades\Lang;
+use Yajra\DataTables\DataTables;
 use App\Library\Helper;
 
 use App\Models\Financeacc\AssetMutation;
@@ -23,14 +24,17 @@ class AssetMutationManualController extends Controller
         return view('financeacc.asset-mutation-manual', $dataview)->render();
     }
 
-    public function dtble()
+    public function dtble(Request $request)
     {
+        $userAuth = $request->get('userAuth');
+
         $query = DB::table('asset_mutations')
                     ->leftJoin('plants as plant_from', 'plant_from.id', '=', 'asset_mutations.from_plant_id')
                     ->leftJoin('plants as plant_to', 'plant_to.id', '=', 'asset_mutations.to_plant_id')
                     ->join('users', 'users.id', '=', 'asset_mutations.user_id')
                     ->join('profiles', 'profiles.id', '=', 'users.profile_id')
                     ->join('departments', 'departments.id', '=', 'profiles.department_id')
+                    ->where('asset_mutations.company_id', $userAuth->company_id_selected)
                     ->select(
                         'asset_mutations.*',
                         'plant_from.initital as from_plant_initital',
@@ -119,10 +123,10 @@ class AssetMutationManualController extends Controller
         $assetMutation->status_changed = 1;
         if ($assetMutation->save()) {
             $stat = 'success';
-            $msg = \Lang::get("message.update.success", ["data" => \Lang::get("confirmation transfer asset")]);
+            $msg = Lang::get("message.update.success", ["data" => Lang::get("confirmation transfer asset")]);
         } else {
             $stat = 'failed';
-            $msg = \Lang::get("message.update.failed", ["data" => \Lang::get("confirmation transfer asset")]);
+            $msg = Lang::get("message.update.failed", ["data" => Lang::get("confirmation transfer asset")]);
         }
 
         return response()->json(Helper::resJSON($stat, $msg));

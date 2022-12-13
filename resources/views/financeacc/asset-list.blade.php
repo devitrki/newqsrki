@@ -615,7 +615,8 @@ $("#hbtnfiltertabledata{{$dom}}").on("click change", function(e) {
 
             plantId = fslctplant_receiver{{$dom}}.get();
             ccCode = fslctcost_center_receiver{{$dom}}.get();
-            if (ccCode == '' || ccCode == null) {
+
+            if (plantId && (ccCode == '' || ccCode == null)) {
                 $.get( 'financeacc/asset/costcenter/' + plantId, function (res) {
                     fslctcost_center_receiver{{$dom}}.initWithData(res);
                 });

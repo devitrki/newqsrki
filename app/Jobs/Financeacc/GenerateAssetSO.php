@@ -21,6 +21,7 @@ class GenerateAssetSO implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    protected $companyId;
     protected $typePlant;
 
     /**
@@ -28,8 +29,9 @@ class GenerateAssetSO implements ShouldQueue
      *
      * @return void
      */
-    public function __construct($typePlant)
+    public function __construct($companyId, $typePlant)
     {
+        $this->companyId = $companyId;
         $this->typePlant = $typePlant;
     }
 
@@ -41,32 +43,33 @@ class GenerateAssetSO implements ShouldQueue
     public function handle()
     {
         try {
+            $companyId = $this->companyId;
             $typePlant = $this->typePlant;
 
             // get asset so id this periode
-            $assetSoId = $this->getAssetSoId();
+            $assetSoId = $this->getAssetSoId($companyId);
 
             // get cost center exclude
-            $costCenterExludes = Configuration::getValueByKeyFor('financeacc', 'cost_center_exclude');
+            $costCenterExludes = Configuration::getValueCompByKeyFor($companyId, 'financeacc', 'cost_center_exclude');
             $costCenterExludes = explode(',', $costCenterExludes);
 
             // type plant, 1 = outlet, 2 = DC
             if ($typePlant != 'dc') {
                 // update status so asset outlet true
-                $statusAssetSoOutlet = Configuration::getValueByKeyFor('financeacc', 'status_outlet_asset_so');
+                $statusAssetSoOutlet = Configuration::getValueCompByKeyFor($companyId, 'financeacc', 'status_outlet_asset_so');
                 if ($statusAssetSoOutlet != 'Running') {
-                    Configuration::setValueByKeyFor('financeacc', 'status_outlet_asset_so', 'Running');
+                    Configuration::setValueCompByKeyFor($companyId, 'financeacc', 'status_outlet_asset_so', 'Running');
                 }
             } else {
                 // update status so asset dc true
-                $statusAssetSoDC = Configuration::getValueByKeyFor('financeacc', 'status_dc_asset_so');
+                $statusAssetSoDC = Configuration::getValueCompByKeyFor($companyId, 'financeacc', 'status_dc_asset_so');
                 if ($statusAssetSoDC != 'Running') {
-                    Configuration::setValueByKeyFor('financeacc', 'status_dc_asset_so', 'Running');
+                    Configuration::setValueCompByKeyFor($companyId, 'financeacc', 'status_dc_asset_so', 'Running');
                 }
             }
 
             // get template notification system for asset so by key
-            $keyNotificationAsset = Configuration::getValueByKeyFor('financeacc', 'key_notification_asset_so');
+            $keyNotificationAsset = Configuration::getValueCompByKeyFor($companyId, 'financeacc', 'key_notification_asset_so');
             $qNotifSystem = DB::table('notification_systems')
                                 ->select('id')
                                 ->where('key', $keyNotificationAsset);
@@ -115,6 +118,7 @@ class GenerateAssetSO implements ShouldQueue
 
                     // check all cost center generated
                     $checkAllCCAssetGen = DB::table('assets')
+                                            ->where('company_id', $companyId)
                                             ->where('plant_id', $plantCCAlreadyGenerate)
                                             ->whereNotIn('cost_center_code', $ccHaveGenerated)
                                             ->whereNotIn('cost_center_code', $costCenterExludes)
@@ -128,6 +132,7 @@ class GenerateAssetSO implements ShouldQueue
 
                 // get 10 plant to generate not in plant already generate
                 $qPlantToGenerates = DB::table('assets')
+                                        ->where('assets.company_id', $companyId)
                                         ->leftJoin('plants', 'plants.id', 'assets.plant_id')
                                         ->whereNotIn('assets.plant_id', $plantAlreadyGenerate)
                                         ->distinct()
@@ -177,6 +182,7 @@ class GenerateAssetSO implements ShouldQueue
 
                             // insert into to asset so plant
                             $assetSoPlant = new AssetSoPlant;
+                            $assetSoPlant->company_id = $companyId;
                             $assetSoPlant->upload_code = AssetSo::generateUploadCode($plantToGenerate, $costCenterCode);
                             $assetSoPlant->asset_so_id = $assetSoId;
                             $assetSoPlant->plant_id = $plantToGenerate;
@@ -284,13 +290,14 @@ class GenerateAssetSO implements ShouldQueue
 
     }
 
-    public function getAssetSoId()
+    public function getAssetSoId($companyId)
     {
         $periodeMonth = Date('n');
         $periodeYear = Date('Y');
 
         $qAssetSo = DB::table('asset_sos')
                         ->select('id')
+                        ->where('company_id', $companyId)
                         ->where('month', $periodeMonth)
                         ->where('year', $periodeYear);
 
@@ -303,6 +310,7 @@ class GenerateAssetSO implements ShouldQueue
         } else {
             // not exist and create
             $assetSo = new AssetSo;
+            $assetSo->company_id = $companyId;
             $assetSo->month = $periodeMonth;
             $assetSo->month_label = Helper::getMonthByNumberMonth($periodeMonth);
             $assetSo->year = $periodeYear;

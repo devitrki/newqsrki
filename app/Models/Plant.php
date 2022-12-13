@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use OwenIt\Auditing\Contracts\Auditable;
 
 class Plant extends Model implements Auditable
@@ -33,8 +34,8 @@ class Plant extends Model implements Auditable
                         ->select('role_id')
                         ->first();
 
-        $role_am = Configuration::getValueByKeyFor('master', 'role_am');
-        $role_rm = Configuration::getValueByKeyFor('master', 'role_rm');
+        $role_am = Configuration::getValueByKeyFor('general_master', 'role_am');
+        $role_rm = Configuration::getValueByKeyFor('general_master', 'role_rm');
 
         $plants = '';
 
@@ -75,6 +76,7 @@ class Plant extends Model implements Auditable
         } else {
 
             $userPlants = DB::table('user_plants')
+                            ->leftJoin('plants', 'plants.id', 'user_plants.plant_id')
                             ->where('user_id', $user_id)
                             ->pluck('plant_id')
                             ->toArray();
@@ -198,9 +200,12 @@ class Plant extends Model implements Auditable
         return $address;
     }
 
-    public static function getPlantAuthUser($id, $get = 'all'){
-        $plants = DB::table('plants')->select('id');
-        $plants_auth = Plant::getPlantsIdByUserId($id);
+    public static function getPlantAuthUser($companyId, $id, $get = 'all'){
+        $plants = DB::table('plants')
+                        ->where('company_id', $companyId)
+                        ->select('id');
+
+        $plants_auth = Plant::getPlantsIdByUserId($companyId, $id);
         if (!in_array('0', explode(',', $plants_auth))) {
             $plants = $plants->whereIn('id', $plants);
         }
@@ -289,11 +294,11 @@ class Plant extends Model implements Auditable
         $pos = '';
         $query = DB::table('plants')
                     ->where('id', $id)
-                    ->select('pos');
+                    ->select('pos_id');
 
         if($query->count()){
             $data = $query->first();
-            $pos = $data->pos;
+            $pos = $data->pos_id;
         }
 
         return $pos;
@@ -713,5 +718,49 @@ class Plant extends Model implements Auditable
         }
 
         return $slocIdGr;
+    }
+
+    public static function getSlocIdAssetMutation($id)
+    {
+        $query = DB::table('plants')
+                    ->select('sloc_id_asset_mutation')
+                    ->where('id', $id);
+
+        $slocIdAssetMutation = '';
+
+        if($query->count() > 0){
+            $plant = $query->first();
+            $slocIdAssetMutation = $plant->sloc_id_asset_mutation;
+        }
+
+        return $slocIdAssetMutation;
+    }
+
+    public static function getSlocIdGiPlant($id)
+    {
+        $query = DB::table('plants')
+                    ->select('sloc_id_gi_plant')
+                    ->where('id', $id);
+
+        $slocIdGiPlant = '';
+
+        if($query->count() > 0){
+            $plant = $query->first();
+            $slocIdGiPlant = $plant->sloc_id_gi_plant;
+        }
+
+        return $slocIdGiPlant;
+    }
+
+    public static function getTypePlant($plant){
+        return ($plant[0] != 'R') ? 'Outlet' : 'DC';
+    }
+
+    public static function getInitialPlant($plant){
+        return ($plant[0] != 'R') ? 'RF' : 'DC';
+    }
+
+    public static function cleanInisialPlant($plant){
+        return Str::of($plant)->replace('Richeese Factory ', '')->replace('Plant ', '')->replace('DC ', '')->replace('Richeese Factory', '');
     }
 }

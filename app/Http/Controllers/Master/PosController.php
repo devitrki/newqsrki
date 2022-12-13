@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Lang;
+use Illuminate\Support\Facades\Cache;
 use Yajra\DataTables\DataTables;
 use App\Library\Helper;
 
@@ -173,6 +174,8 @@ class PosController extends Controller
 
         $pos->configurations = $configurationJson;
         if ($pos->save()) {
+            Cache::forget('pos_configuration_id_' . $pos->id);
+
             $stat = 'success';
             $msg = Lang::get("message.save.success", ["data" => Lang::get("pos configuration")]);
         } else {
@@ -193,6 +196,8 @@ class PosController extends Controller
         $configurationJson = json_encode($configurations);
         $pos->configurations = $configurationJson;
         if ($pos->save()) {
+            Cache::forget('pos_configuration_id_' . $pos->id);
+
             $stat = 'success';
             $msg = Lang::get("message.destroy.success", ["data" => Lang::get("pos configuration")]);
         } else {

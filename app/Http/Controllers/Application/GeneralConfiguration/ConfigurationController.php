@@ -40,7 +40,14 @@ class ConfigurationController extends Controller
                         'companies.name as company_name',
                     ]);
 
-        return Datatables::of($query)->addIndexColumn()->make();
+        return Datatables::of($query)
+                ->addIndexColumn()
+                ->filterColumn('group_name', function ($query, $keyword) {
+                    $sql = "configuration_groups.name like ?";
+                    $query->whereRaw($sql, ["%{$keyword}%"]);
+                })
+                ->rawColumns(['option'])
+                ->make();
     }
 
     public function store(Request $request)

@@ -5,12 +5,13 @@ namespace App\Http\Controllers\Financeacc;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use DataTables;
+use Illuminate\Support\Facades\Lang;
+use Yajra\DataTables\DataTables;
 use App\Library\Helper;
 
-use App\Models\Financeacc\AssetAdminDepart;
 use App\Models\User;
 use App\Models\Plant;
+use App\Models\Financeacc\AssetAdminDepart;
 
 class AdminDepartController extends Controller
 {
@@ -21,10 +22,13 @@ class AdminDepartController extends Controller
         return view('financeacc.asset-admin-depart', $dataview)->render();
     }
 
-    public function dtble()
+    public function dtble(Request $request)
     {
+        $userAuth = $request->get('userAuth');
+
         $query = DB::table('asset_admin_departs')
                     ->join('plants', 'plants.id', 'asset_admin_departs.plant_id')
+                    ->where('asset_admin_departs.company_id', $userAuth->company_id_selected)
                     ->select(
                         'asset_admin_departs.id',
                         'asset_admin_departs.plant_id',
@@ -63,6 +67,8 @@ class AdminDepartController extends Controller
                         'admin_department' => 'required'
                     ]);
 
+        $userAuth = $request->get('userAuth');
+
         // check plant and cost center must unique in db table
         $countAdminDepart = DB::table('asset_admin_departs')
                         ->where('plant_id', $request->plant)
@@ -71,11 +77,12 @@ class AdminDepartController extends Controller
 
         if( $countAdminDepart > 0 ){
             $stat = 'failed';
-            $msg = \Lang::get("Plant and cost center already mapping.");
+            $msg = Lang::get("Plant and cost center already mapping.");
             return response()->json( Helper::resJSON( $stat, $msg ) );
         }
 
         $assetAdminDepart = new AssetAdminDepart;
+        $assetAdminDepart->company_id = $userAuth->company_id_selected;
         $assetAdminDepart->plant_id = $request->plant;
         $assetAdminDepart->cost_center = $request->cost_center;
         $assetAdminDepart->cost_center_code = $request->cost_center_code;
@@ -83,10 +90,10 @@ class AdminDepartController extends Controller
         $assetAdminDepart->hod_id = $request->hod;
         if ($assetAdminDepart->save()) {
             $stat = 'success';
-            $msg = \Lang::get("message.save.success", ["data" => \Lang::get("admin department")]);
+            $msg = Lang::get("message.save.success", ["data" => Lang::get("admin department")]);
         } else {
             $stat = 'failed';
-            $msg = \Lang::get("message.save.failed", ["data" => \Lang::get("admin department")]);
+            $msg = Lang::get("message.save.failed", ["data" => Lang::get("admin department")]);
         }
 
         return response()->json( Helper::resJSON( $stat, $msg ) );
@@ -104,11 +111,11 @@ class AdminDepartController extends Controller
         $assetAdminDepart->hod_id = $request->hod;
         if ($assetAdminDepart->save()) {
             $stat = 'success';
-            $msg = \Lang::get("message.update.success", ["data" => \Lang::get("admin department")]);
+            $msg = Lang::get("message.update.success", ["data" => Lang::get("admin department")]);
         } else {
             DB::rollBack();
             $stat = 'failed';
-            $msg = \Lang::get("message.update.failed", ["data" => \Lang::get("admin department")]);
+            $msg = Lang::get("message.update.failed", ["data" => Lang::get("admin department")]);
         }
 
         return response()->json( Helper::resJSON( $stat, $msg ) );
@@ -119,10 +126,10 @@ class AdminDepartController extends Controller
         $assetAdminDepart = AssetAdminDepart::find($id);
         if ($assetAdminDepart->delete()) {
             $stat = 'success';
-            $msg = \Lang::get("message.destroy.success", ["data" => \Lang::get("admin department")]);
+            $msg = Lang::get("message.destroy.success", ["data" => Lang::get("admin department")]);
         } else {
             $stat = 'failed';
-            $msg = \Lang::get("message.destroy.failed", ["data" => \Lang::get("admin department")]);
+            $msg = Lang::get("message.destroy.failed", ["data" => Lang::get("admin department")]);
         }
         return response()->json( Helper::resJSON( $stat, $msg ) );
     }

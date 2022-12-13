@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Lang;
 use Yajra\DataTables\DataTables;
 use App\Library\Helper;
 
+use App\Services\MaterialServiceAppsImpl;
+use App\Services\MaterialServiceSapImpl;
+
 use App\Models\Material;
 
 class MaterialController extends Controller
@@ -103,31 +106,16 @@ class MaterialController extends Controller
 
     public function sync(Request $request)
     {
-        $response = Http::get(config('qsrki.api.apps.url') . 'recheese/daily-sales/sap/asset/list?plant=F103');
-        if($response->ok()){
-            $materials = $response->json();
-        }
+        $stat = 'success';
+        $msg = Lang::get("message.sync.success", ["data" => Lang::get("material")]);
 
-        $response = Http::get(config('qsrki.api.apps.url') . 'recheese/daily-sales/sap/material');
+        $userAuth = $request->get('userAuth');
 
-        if($response->ok()){
-            DB::beginTransaction();
-
-            $userAuth = $request->get('userAuth');
-            $materials = $response->json();
-            if($this->syncMaterial($userAuth, $materials)){
-                DB::commit();
-                $stat = 'success';
-                $msg = Lang::get("message.sync.success", ["data" => Lang::get("material")]);
-            } else {
-                DB::rollback();
-                $stat = 'failed';
-                $msg = Lang::get("message.sync.failed", ["data" => Lang::get("material")]);
-            }
-
-        } else {
-            $stat = 'failed';
-            $msg = Lang::get("message.sync.failed", ["data" => Lang::get("material")]);
+        $materialService = new MaterialServiceSapImpl();
+        $response = $materialService->syncMaterial($userAuth->company_id_selected);
+        if (!$response['status']) {
+            $stat = $response['status'];
+            $msg = $response['message'];
         }
 
         return response()->json( Helper::resJSON( $stat, $msg ) );

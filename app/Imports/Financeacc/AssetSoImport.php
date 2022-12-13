@@ -7,12 +7,20 @@ use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Lang;
 use App\Models\Financeacc\AssetSoPlant;
 use App\Models\Financeacc\AssetSoDetail;
 use App\Models\Plant;
 
 class AssetSoImport implements ToCollection, WithStartRow
 {
+    protected $companyId;
+
+    function __construct($companyId)
+    {
+        $this->companyId = $companyId;
+    }
+
     /**
      * @return int
      */
@@ -27,7 +35,7 @@ class AssetSoImport implements ToCollection, WithStartRow
         $msg = '';
 
         // get plant user
-        $plantId = Plant::getPlantIdByUserId(Auth::id());
+        $plantId = Plant::getPlantIdByUserId($this->companyId, Auth::id());
 
         // check upload code is correct or not
         $uploadCode = trim($rows[0][1]);
@@ -81,7 +89,7 @@ class AssetSoImport implements ToCollection, WithStartRow
 
         } else {
             $status = 'failed';
-            $msg = \Lang::get("File excel not valid. Please download the valid file.");
+            $msg = Lang::get("File excel not valid. Please download the valid file.");
         }
 
         $return = [

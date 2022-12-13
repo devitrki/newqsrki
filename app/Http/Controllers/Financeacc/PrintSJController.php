@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Lang;
+
 use App\Library\Helper;
 
-use DataTables;
+use Yajra\DataTables\DataTables;
 
 use App\Models\Plant;
 use App\Models\Financeacc\Asset;
@@ -18,8 +20,11 @@ use App\Models\User;
 
 class PrintSJController extends Controller
 {
-    public function index(Request $request){
-        $first_plant_id = Plant::getFirstPlantIdSelect(true, 'all');
+    public function index(Request $request)
+    {
+        $userAuth = $request->get('userAuth');
+
+        $first_plant_id = Plant::getFirstPlantIdSelect($userAuth->company_id_selected, 'all', true);
         $first_plant_name = Plant::getShortNameById($first_plant_id);
 
         $dataview = [
@@ -33,12 +38,15 @@ class PrintSJController extends Controller
 
     public function dtble(Request $request)
     {
+        $userAuth = $request->get('userAuth');
+
         $query = DB::table('asset_mutations')
                     ->join('plants as plant_from', 'plant_from.id', '=', 'asset_mutations.from_plant_id')
                     ->join('plants as plant_to', 'plant_to.id', '=', 'asset_mutations.to_plant_id')
                     ->join('users', 'users.id', '=', 'asset_mutations.user_id')
                     ->join('profiles', 'profiles.id', '=', 'users.profile_id')
                     ->join('departments', 'departments.id', '=', 'profiles.department_id')
+                    ->where('asset_mutations.company_id', $userAuth->company_id_selected)
                     ->select('asset_mutations.*', 'plant_from.initital as from_plant_initital',
                             'plant_from.short_name as from_plant_name', 'plant_from.code as from_plant_code',
                             'plant_to.initital as to_plant_initital',
@@ -211,10 +219,10 @@ class PrintSJController extends Controller
 
                 return view('financeacc.asset-printsj-preview', $dataview);
             } else {
-                echo \Lang::get("This Mutation Cannot Preview !");
+                echo Lang::get("This Mutation Cannot Preview !");
             }
         } else {
-            echo \Lang::get("This Mutation Cannot Preview !");
+            echo Lang::get("This Mutation Cannot Preview !");
         }
     }
 }

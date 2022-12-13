@@ -7,11 +7,13 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Lang;
 use App\Models\Inventory\Waste;
 
 
 class WasteSheet implements FromView, ShouldAutoSize, WithTitle
 {
+    protected $companyId;
     protected $plantId;
     protected $hide;
     protected $title;
@@ -19,8 +21,9 @@ class WasteSheet implements FromView, ShouldAutoSize, WithTitle
     protected $dateUntil;
     protected $userId;
 
-    function __construct($plantId, $hide, $title, $dateFrom, $dateUntil, $userId)
+    function __construct($companyId, $plantId, $hide, $title, $dateFrom, $dateUntil, $userId)
     {
+        $this->companyId = $companyId;
         $this->plantId = $plantId;
         $this->hide = $hide;
         $this->title = $title;
@@ -32,8 +35,8 @@ class WasteSheet implements FromView, ShouldAutoSize, WithTitle
     public function view(): View
     {
         $report_data = [
-            'title' => \Lang::get('Income Sales Detail Used Oil Report'),
-            'data' => Waste::getDataReport($this->plantId, $this->hide, $this->dateFrom, $this->dateUntil, $this->userId)
+            'title' => Lang::get('Income Sales Detail Used Oil Report'),
+            'data' => Waste::getDataReport($this->companyId, $this->plantId, $this->hide, $this->dateFrom, $this->dateUntil, $this->userId)
         ];
 
         return view('inventory.excel.waste-excel', $report_data);

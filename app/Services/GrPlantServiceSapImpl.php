@@ -18,7 +18,7 @@ use App\Models\Inventory\GrPlantItem;
 
 class GrPlantServiceSapImpl implements GrPlantService
 {
-    public function getOutstandingPoPlant($plantId)
+    public function getOutstandingPoPlant($plantId, $filter = true)
     {
         $status = true;
         $message = '';
@@ -27,13 +27,21 @@ class GrPlantServiceSapImpl implements GrPlantService
                     ->where('id', $plantId)
                     ->first();
 
+        $sapCodeComp = Company::getConfigByKey($plant->company_id, 'SAP_CODE');
+        if (!$sapCodeComp || $sapCodeComp == '') {
+            return [
+                'status' => false,
+                'message' => Lang::get('Please set SAP_CODE in company configuration'),
+            ];
+        }
+
         $param = [
-            'company_id' => $plant->company_id,
+            'company_id' => $sapCodeComp,
             'plant_id' => $plant->code,
             'is_vendor' => false
         ];
 
-        $sapRepository = new SapRepositorySapImpl(true);
+        $sapRepository = new SapRepositorySapImpl($plant->company_id);
         $sapResponse = $sapRepository->getOutstandingPoVendor($param);
 
         $outstanding = [];
@@ -41,17 +49,21 @@ class GrPlantServiceSapImpl implements GrPlantService
         if ($sapResponse['status']) {
             $outstandingSap = $sapResponse['response'];
 
-            foreach ($outstandingSap as $v) {
-                $plant_from = Plant::getShortNameByCode($v['supplying_plant_id']);
-                $plant_to = Plant::getShortNameByCode($v['receiving_plant_id']);
-                $outstanding[] = [
-                    'code_from' => $v['supplying_plant_id'],
-                    'code_to' => $v['receiving_plant_id'],
-                    'plant_from' => $plant_from,
-                    'plant_to' => $plant_to,
-                    'document_number' => $v['gi_number'],
-                    'mutation_date' => Helper::DateConvertFormat($v['posting_date'], 'Y-m-d', 'd/m/Y'),
-                ];
+            if ($filter) {
+                foreach ($outstandingSap as $v) {
+                    $plant_from = Plant::getShortNameByCode($v['supplying_plant_id']);
+                    $plant_to = Plant::getShortNameByCode($v['receiving_plant_id']);
+                    $outstanding[] = [
+                        'code_from' => $v['supplying_plant_id'],
+                        'code_to' => $v['receiving_plant_id'],
+                        'plant_from' => $plant_from,
+                        'plant_to' => $plant_to,
+                        'document_number' => $v['gi_number'],
+                        'mutation_date' => Helper::DateConvertFormat($v['delivery_date'], 'Y-m-d', 'd/m/Y'),
+                    ];
+                }
+            } else {
+                $outstanding = $outstandingSap;
             }
         }
 
@@ -71,13 +83,21 @@ class GrPlantServiceSapImpl implements GrPlantService
                     ->where('code', $plantCode)
                     ->first();
 
+        $sapCodeComp = Company::getConfigByKey($plant->company_id, 'SAP_CODE');
+        if (!$sapCodeComp || $sapCodeComp == '') {
+            return [
+                'status' => false,
+                'message' => Lang::get('Please set SAP_CODE in company configuration'),
+            ];
+        }
+
         $payload = [
-            'company_id' => $plant->company_id,
+            'company_id' => $sapCodeComp,
             'plant_id' => $plant->code,
             'document_numbers' => [$documentNumber]
         ];
 
-        $sapRepository = new SapRepositorySapImpl(true);
+        $sapRepository = new SapRepositorySapImpl($plant->company_id);
         $sapResponse = $sapRepository->getOutstandingGr($payload);
 
         $detailOutstanding = [];
@@ -124,11 +144,11 @@ class GrPlantServiceSapImpl implements GrPlantService
         $status = true;
         $message = Lang::get("message.save.success", ["data" => Lang::get("gr plant")]);
 
-        $sapCodeComp = Company::getConfigByKey($companyId, 'sap_code');
+        $sapCodeComp = Company::getConfigByKey($companyId, 'SAP_CODE');
         if (!$sapCodeComp || $sapCodeComp == '') {
             return [
                 'status' => false,
-                'message' => Lang::get('Please set sap_code in company configuration'),
+                'message' => Lang::get('Please set SAP_CODE in company configuration'),
             ];
         }
 
@@ -164,7 +184,7 @@ class GrPlantServiceSapImpl implements GrPlantService
             ];
         }
 
-        $sapRepository = new SapRepositorySapImpl(true);
+        $sapRepository = new SapRepositorySapImpl($companyId);
         $sapResponse = $sapRepository->uploadGrVendor($dataUpload);
 
         $document_number = ""; #no GR

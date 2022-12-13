@@ -25,4 +25,18 @@ class UoSaldoVendor extends Model implements Auditable
 
         return $saldo;
     }
+
+    // report
+    public static function getDataReport($companyId)
+    {
+        $saldoVendors = DB::table('uo_saldo_vendors')
+                        ->join('uo_vendors', 'uo_vendors.id', 'uo_saldo_vendors.uo_vendor_id')
+                        ->where('uo_vendors.company_id', $companyId)
+                        ->select('uo_saldo_vendors.saldo', 'uo_vendors.name');
+
+        return [
+            'count' => $saldoVendors->count(),
+            'items' => $saldoVendors->get()
+        ];
+    }
 }

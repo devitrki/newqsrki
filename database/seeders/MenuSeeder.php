@@ -988,7 +988,7 @@ class MenuSeeder extends Seeder
         $gr_po_vendor_report_menu->description = "Menu for report GR PO Vendor";
         $gr_po_vendor_report_menu->url = "report/inventory/gr-vendor";
         $gr_po_vendor_report_menu->permission_menu = "C,R,U,D";
-        $gr_po_vendor_report_menu->sort_order = 3;
+        $gr_po_vendor_report_menu->sort_order = 4;
         $gr_po_vendor_report_menu->flag_end = 1;
         $gr_po_vendor_report_menu->save();
 
@@ -1001,7 +1001,7 @@ class MenuSeeder extends Seeder
         $waste_report_menu->description = "Menu for report waste";
         $waste_report_menu->url = "report/inventory/waste";
         $waste_report_menu->permission_menu = "C,R,U,D";
-        $waste_report_menu->sort_order = 4;
+        $waste_report_menu->sort_order = 5;
         $waste_report_menu->flag_end = 1;
         $waste_report_menu->save();
 
@@ -1014,7 +1014,7 @@ class MenuSeeder extends Seeder
         $current_stock_report_menu->description = "Menu for report current Stock";
         $current_stock_report_menu->url = "report/inventory/current-stock";
         $current_stock_report_menu->permission_menu = "C,R,U,D";
-        $current_stock_report_menu->sort_order = 5;
+        $current_stock_report_menu->sort_order = 6;
         $current_stock_report_menu->flag_end = 1;
         $current_stock_report_menu->save();
 
@@ -1027,7 +1027,7 @@ class MenuSeeder extends Seeder
         $outstanding_posto_report_menu->description = "Menu for report outstanding PO-STO from SAP";
         $outstanding_posto_report_menu->url = "report/inventory/outstanding-posto";
         $outstanding_posto_report_menu->permission_menu = "C,R,U,D";
-        $outstanding_posto_report_menu->sort_order = 6;
+        $outstanding_posto_report_menu->sort_order = 7;
         $outstanding_posto_report_menu->flag_end = 1;
         $outstanding_posto_report_menu->save();
 
@@ -1258,6 +1258,19 @@ class MenuSeeder extends Seeder
         $opname_material_formula_menu->sort_order = 13;
         $opname_material_formula_menu->flag_end = 1;
         $opname_material_formula_menu->save();
+
+        // create menu file 'GR Plant Report' 99
+        $gr_plant_report_menu = new Menu;
+        $gr_plant_report_menu->parent_id = $inventory_report_folder->id; //for root menu
+        $gr_plant_report_menu->type = 1; // 1 = file
+        $gr_plant_report_menu->path = "62,69,76"; // path menu id for easy get structur
+        $gr_plant_report_menu->name = "GR Plant Report";
+        $gr_plant_report_menu->description = "Menu for report gr plant";
+        $gr_plant_report_menu->url = "report/inventory/gr-plant";
+        $gr_plant_report_menu->permission_menu = "C,R,U,D";
+        $gr_plant_report_menu->sort_order = 3;
+        $gr_plant_report_menu->flag_end = 1;
+        $gr_plant_report_menu->save();
 
         // commit transaction
         DB::commit();

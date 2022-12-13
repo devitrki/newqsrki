@@ -6,6 +6,8 @@ use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Lang;
+
 use App\Models\Inventory\GiPlant;
 
 class GIPlantExport implements FromView, ShouldAutoSize, WithTitle
@@ -24,7 +26,7 @@ class GIPlantExport implements FromView, ShouldAutoSize, WithTitle
     public function view(): View
     {
         $report_data = [
-            'title' => \Lang::get('GI Plant Report'),
+            'title' => Lang::get('GI Plant Report'),
             'data' => GiPlant::getDataReport($this->plant, $this->dateFrom, $this->dateUntil)
         ];
 

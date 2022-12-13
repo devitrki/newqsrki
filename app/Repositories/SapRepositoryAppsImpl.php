@@ -138,6 +138,68 @@ class SapRepositoryAppsImpl implements SapRepository
         ];
     }
 
+    public function mutationAsset($param)
+    {
+        $url = config('qsrki.api.sap.url') . 'zserv';
+        $res = Http::timeout(100)
+                ->get($url, $param);
+
+        $status = false;
+        $response = false;
+
+        if ($res->ok()) {
+            $status = true;
+            $response = $res->json();
+        }
+
+        return [
+            'status' => $status,
+            'response' => $response
+        ];
+    }
+
+    public function getMasterPlant($param)
+    {
+        $url = config('qsrki.api.apps.url') . 'recheese/daily-sales/sap/plant';
+
+        $res = Http::timeout(100)
+                ->get($url);
+
+        $status = false;
+        $response = false;
+
+        if ($res->ok()) {
+            $status = true;
+            $response = $res->json();
+        }
+
+        return [
+            'status' => $status,
+            'response' => $response
+        ];
+    }
+
+    public function getMasterMaterial($param)
+    {
+        $url = config('qsrki.api.apps.url') . 'recheese/daily-sales/sap/material';
+
+        $res = Http::timeout(100)
+                ->get($url, $param);
+
+        $status = false;
+        $response = false;
+
+        if ($res->ok()) {
+            $status = true;
+            $response = $res->json();
+        }
+
+        return [
+            'status' => $status,
+            'response' => $response
+        ];
+    }
+
     public function getCurrentStockPlant($param)
     {
         $url = config('qsrki.api.apps.url') . 'recheese/daily-sales/sap/stock';
@@ -201,9 +263,51 @@ class SapRepositoryAppsImpl implements SapRepository
         ];
     }
 
+    public function getOutstandingPoPlantReport($param)
+    {
+        $url = config('qsrki.api.apps.url') . 'recheese/daily-sales/sap/posto/outstanding';
+
+        $res = Http::timeout(100)
+                ->get($url, $param);
+
+        $status = false;
+        $response = false;
+
+        if ($res->ok()) {
+            $status = true;
+            $response = $res->json();
+        }
+
+        return [
+            'status' => $status,
+            'response' => $response
+        ];
+    }
+
     public function getOutstandingGr($param)
     {
         $url = config('qsrki.api.apps.url') . 'recheese/daily-sales/sap/gr/outstanding/detail';
+
+        $res = Http::timeout(100)
+                ->get($url, $param);
+
+        $status = false;
+        $response = false;
+
+        if ($res->ok()) {
+            $status = true;
+            $response = $res->json();
+        }
+
+        return [
+            'status' => $status,
+            'response' => $response
+        ];
+    }
+
+    public function syncAsset($param)
+    {
+        $url = config('qsrki.api.apps.url') . 'recheese/daily-sales/sap/asset/list';
 
         $res = Http::timeout(100)
                 ->get($url, $param);

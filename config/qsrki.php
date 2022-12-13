@@ -18,10 +18,7 @@ return [
             'complete' => env('API_ALOHA_COMPLETE', 'pos/check/complete'),
         ],
         'sap_middleware' => [
-            'url' => env('SAP_MIDDLEWARE_API_URL', 'https://sap.test'),
-            'client' => env('SAP_MIDDLEWARE_API_CLIENT', ''),
-            'api_key' => env('SAP_MIDDLEWARE_API_KEY', 'xxxxx'),
-            'api_secret_key' => env('SAP_MIDDLEWARE_API_SECRET_KEY', 'sssssss'),
+            'url' => env('SAP_MIDDLEWARE_API_URL', 'https://pos.richeesefactory.com:3001'),
             'api_timeout' => env('SAP_MIDDLEWARE_API_TIMEOUT', '100'),
         ],
     ],

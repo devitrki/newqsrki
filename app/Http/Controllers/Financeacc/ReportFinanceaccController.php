@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Financeacc;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Lang;
+
 use App\Library\Helper;
 
 use App\Jobs\GenerateReportFinanceacc;
@@ -42,18 +44,20 @@ class ReportFinanceaccController extends Controller
 
     public function report($menu, Request $request)
     {
+        $userAuth = $request->get('userAuth');
+
         switch ($menu) {
             case 'outstanding-mutation-asset':
-                return $this->reportOutstandingMutationAsset($request->all());
+                return $this->reportOutstandingMutationAsset($userAuth->company_id_selected, $request->all());
                 break;
             case 'log-mutation-asset':
-                return $this->reportLogMutationAsset($request->all());
+                return $this->reportLogMutationAsset($userAuth->company_id_selected, $request->all());
                 break;
             case 'asset-so':
-                return $this->reportAssetSo($request->all());
+                return $this->reportAssetSo($userAuth->company_id_selected, $request->all());
                 break;
             case 'selisih-asset-so':
-                return $this->reportSelisihAssetSo($request->all());
+                return $this->reportSelisihAssetSo($userAuth->company_id_selected, $request->all());
                 break;
             case 'outstanding-request-mutation':
                 return $this->reportOutstandingRequestMutation($request->all());
@@ -66,24 +70,26 @@ class ReportFinanceaccController extends Controller
 
     public function export($menu, Request $request)
     {
+        $userAuth = $request->get('userAuth');
+
         switch ($menu) {
             case 'outstanding-mutation-asset':
-                return $this->exportOutstandingMutationAsset($request);
+                return $this->exportOutstandingMutationAsset($userAuth->company_id_selected, $request);
                 break;
             case 'log-mutation-asset':
-                return $this->exportLogMutationAsset($request);
+                return $this->exportLogMutationAsset($userAuth->company_id_selected, $request);
                 break;
             case 'asset-so':
-                return $this->exportAssetSo($request);
+                return $this->exportAssetSo($userAuth->company_id_selected, $request);
                 break;
             case 'selisih-asset-so':
-                return $this->exportSelisihAssetSo($request);
+                return $this->exportSelisihAssetSo($userAuth->company_id_selected, $request);
                 break;
             case 'outstanding-request-mutation':
-                return $this->exportOutstandingRequestMutation($request);
+                return $this->exportOutstandingRequestMutation($userAuth->company_id_selected, $request);
                 break;
             case 'log-request-mutation':
-                return $this->exportLogRequestMutation($request);
+                return $this->exportLogRequestMutation($userAuth->company_id_selected, $request);
                 break;
         }
     }
@@ -138,27 +144,27 @@ class ReportFinanceaccController extends Controller
     }
 
     // report
-    public function reportOutstandingMutationAsset($request)
+    public function reportOutstandingMutationAsset($companyId, $request)
     {
-        $dataview = AssetMutation::getDataOutstandingReport($request['plant-id'], Auth::id());
+        $dataview = AssetMutation::getDataOutstandingReport($companyId, $request['plant-id'], Auth::id());
         return view('reports.financeacc.asset.outstanding-mutation-asset-report', $dataview)->render();
     }
 
-    public function reportLogMutationAsset($request)
+    public function reportLogMutationAsset($companyId, $request)
     {
-        $dataview = AssetMutation::getDataLogReport($request['plant-id'], Auth::id(), $request['from-date'], $request['until-date']);
+        $dataview = AssetMutation::getDataLogReport($companyId, $request['plant-id'], Auth::id(), $request['from-date'], $request['until-date']);
         return view('reports.financeacc.asset.log-mutation-asset-report', $dataview)->render();
     }
 
-    public function reportAssetSo($request)
+    public function reportAssetSo($companyId, $request)
     {
-        $dataview = AssetSo::getDataAssetSoReport($request['plant-id'], $request['costcenter'], $request['periode']);
+        $dataview = AssetSo::getDataAssetSoReport($companyId, $request['plant-id'], $request['costcenter'], $request['periode']);
         return view('reports.financeacc.asset.asset-so-report', $dataview)->render();
     }
 
-    public function reportSelisihAssetSo($request)
+    public function reportSelisihAssetSo($companyId, $request)
     {
-        $dataview = AssetSo::getDataSelisihAssetSoReport($request['plant-id'], $request['periode'], Auth::id());
+        $dataview = AssetSo::getDataSelisihAssetSoReport($companyId, $request['plant-id'], $request['periode'], Auth::id());
         return view('reports.financeacc.asset.selisih-asset-so-report', $dataview)->render();
     }
 
@@ -175,19 +181,21 @@ class ReportFinanceaccController extends Controller
     }
 
     // export
-    public function exportOutstandingMutationAsset($request)
+    public function exportOutstandingMutationAsset($companyId, $request)
     {
         $request->validate([
             'plant' => 'required',
         ]);
 
         $param = [
+            'company_id' => $companyId,
             'plant' => $request->plant,
             'user_id' => Auth::id()
         ];
 
         // insert to downloads
         $download = new Download;
+        $download->company_id = $companyId;
         $download->name = 'Outstanding Asset Transfer';
         $download->module = 'Finance Accounting';
         $download->type = 'outstanding-mutation-asset';
@@ -207,16 +215,16 @@ class ReportFinanceaccController extends Controller
 
         if ($success) {
             $stat = 'success';
-            $msg = \Lang::get("message.export.success", ["data" => \Lang::get("Outstanding Asset Transfer")]);
+            $msg = Lang::get("message.export.success", ["data" => Lang::get("Outstanding Asset Transfer")]);
         } else {
             $stat = 'failed';
-            $msg = \Lang::get("message.export.failed", ["data" => \Lang::get("Outstanding Asset Transfer")]);
+            $msg = Lang::get("message.export.failed", ["data" => Lang::get("Outstanding Asset Transfer")]);
         }
 
         return response()->json(Helper::resJSON($stat, $msg));
     }
 
-    public function exportLogMutationAsset($request)
+    public function exportLogMutationAsset($companyId, $request)
     {
         $request->validate([
             'plant' => 'required',
@@ -225,6 +233,7 @@ class ReportFinanceaccController extends Controller
         ]);
 
         $param = [
+            'company_id' => $companyId,
             'plant' => $request->plant,
             'from_date' => $request->from_date,
             'until_date' => $request->until_date,
@@ -233,6 +242,7 @@ class ReportFinanceaccController extends Controller
 
         // insert to downloads
         $download = new Download;
+        $download->company_id = $companyId;
         $download->name = 'Log Asset Transfer';
         $download->module = 'Finance Accounting';
         $download->type = 'log-mutation-asset';
@@ -252,16 +262,16 @@ class ReportFinanceaccController extends Controller
 
         if ($success) {
             $stat = 'success';
-            $msg = \Lang::get("message.export.success", ["data" => \Lang::get("Log Asset Transfer")]);
+            $msg = Lang::get("message.export.success", ["data" => Lang::get("Log Asset Transfer")]);
         } else {
             $stat = 'failed';
-            $msg = \Lang::get("message.export.failed", ["data" => \Lang::get("Log Asset Transfer")]);
+            $msg = Lang::get("message.export.failed", ["data" => Lang::get("Log Asset Transfer")]);
         }
 
         return response()->json(Helper::resJSON($stat, $msg));
     }
 
-    public function exportAssetSo($request)
+    public function exportAssetSo($companyId, $request)
     {
         $request->validate([
             'plant' => 'required',
@@ -270,6 +280,7 @@ class ReportFinanceaccController extends Controller
         ]);
 
         $param = [
+            'company_id' => $companyId,
             'plant' => $request->plant,
             'costcenter' => $request->cost_center,
             'periode' => $request->periode
@@ -277,6 +288,7 @@ class ReportFinanceaccController extends Controller
 
         // insert to downloads
         $download = new Download;
+        $download->company_id = $companyId;
         $download->name = 'Asset SO';
         $download->module = 'Finance Accounting';
         $download->type = 'asset-so';
@@ -296,16 +308,16 @@ class ReportFinanceaccController extends Controller
 
         if ($success) {
             $stat = 'success';
-            $msg = \Lang::get("message.export.success", ["data" => \Lang::get("Asset SO")]);
+            $msg = Lang::get("message.export.success", ["data" => Lang::get("Asset SO")]);
         } else {
             $stat = 'failed';
-            $msg = \Lang::get("message.export.failed", ["data" => \Lang::get("Asset SO")]);
+            $msg = Lang::get("message.export.failed", ["data" => Lang::get("Asset SO")]);
         }
 
         return response()->json(Helper::resJSON($stat, $msg));
     }
 
-    public function exportSelisihAssetSo($request)
+    public function exportSelisihAssetSo($companyId, $request)
     {
         $request->validate([
             'plant' => 'required',
@@ -313,6 +325,7 @@ class ReportFinanceaccController extends Controller
         ]);
 
         $param = [
+            'company_id' => $companyId,
             'plant' => $request->plant,
             'periode' => $request->periode,
             'user_id' => Auth::id()
@@ -320,6 +333,7 @@ class ReportFinanceaccController extends Controller
 
         // insert to downloads
         $download = new Download;
+        $download->company_id = $companyId;
         $download->name = 'Selisih Asset SO';
         $download->module = 'Finance Accounting';
         $download->type = 'selisih-asset-so';
@@ -339,16 +353,16 @@ class ReportFinanceaccController extends Controller
 
         if ($success) {
             $stat = 'success';
-            $msg = \Lang::get("message.export.success", ["data" => \Lang::get("Selisih Asset SO")]);
+            $msg = Lang::get("message.export.success", ["data" => Lang::get("Selisih Asset SO")]);
         } else {
             $stat = 'failed';
-            $msg = \Lang::get("message.export.failed", ["data" => \Lang::get("Selisih Asset SO")]);
+            $msg = Lang::get("message.export.failed", ["data" => Lang::get("Selisih Asset SO")]);
         }
 
         return response()->json(Helper::resJSON($stat, $msg));
     }
 
-    public function exportOutstandingRequestMutation($request)
+    public function exportOutstandingRequestMutation($companyId, $request)
     {
         $request->validate([
             'plant' => 'required',
@@ -361,6 +375,7 @@ class ReportFinanceaccController extends Controller
 
         // insert to downloads
         $download = new Download;
+        $download->company_id = $companyId;
         $download->name = 'Outstanding Request Mutation';
         $download->module = 'Finance Accounting';
         $download->type = 'outstanding-request-mutation';
@@ -380,16 +395,16 @@ class ReportFinanceaccController extends Controller
 
         if ($success) {
             $stat = 'success';
-            $msg = \Lang::get("message.export.success", ["data" => \Lang::get("Outstanding Request Mutation")]);
+            $msg = Lang::get("message.export.success", ["data" => Lang::get("Outstanding Request Mutation")]);
         } else {
             $stat = 'failed';
-            $msg = \Lang::get("message.export.failed", ["data" => \Lang::get("Outstanding Request Mutation")]);
+            $msg = Lang::get("message.export.failed", ["data" => Lang::get("Outstanding Request Mutation")]);
         }
 
         return response()->json(Helper::resJSON($stat, $msg));
     }
 
-    public function exportLogRequestMutation($request)
+    public function exportLogRequestMutation($companyId, $request)
     {
         $request->validate([
             'plant' => 'required',
@@ -406,6 +421,7 @@ class ReportFinanceaccController extends Controller
 
         // insert to downloads
         $download = new Download;
+        $download->company_id = $companyId;
         $download->name = 'Log Request Mutation';
         $download->module = 'Finance Accounting';
         $download->type = 'log-request-mutation';
@@ -425,10 +441,10 @@ class ReportFinanceaccController extends Controller
 
         if ($success) {
             $stat = 'success';
-            $msg = \Lang::get("message.export.success", ["data" => \Lang::get("Log Request Mutation")]);
+            $msg = Lang::get("message.export.success", ["data" => Lang::get("Log Request Mutation")]);
         } else {
             $stat = 'failed';
-            $msg = \Lang::get("message.export.failed", ["data" => \Lang::get("Log Request Mutation")]);
+            $msg = Lang::get("message.export.failed", ["data" => Lang::get("Log Request Mutation")]);
         }
 
         return response()->json(Helper::resJSON($stat, $msg));

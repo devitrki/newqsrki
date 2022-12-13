@@ -17,11 +17,11 @@ class WasteServiceSapImpl implements WasteService
 {
     public function uploadWaste($companyId, $wasteId)
     {
-        $sapCodeComp = Company::getConfigByKey($companyId, 'sap_code');
+        $sapCodeComp = Company::getConfigByKey($companyId, 'SAP_CODE');
         if (!$sapCodeComp || $sapCodeComp == '') {
             return [
                 "status" => false,
-                "message" => Lang::get("Please set sap_code in company configuration")
+                "message" => Lang::get("Please set SAP_CODE in company configuration")
             ];
         }
 
@@ -71,7 +71,7 @@ class WasteServiceSapImpl implements WasteService
 
         }
 
-        $sapRepository = new SapRepositorySapImpl(true);
+        $sapRepository = new SapRepositorySapImpl($companyId, true);
         $sapResponse = $sapRepository->uploadWaste($dataUpload);
 
         if ($sapResponse['status']) {

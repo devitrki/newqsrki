@@ -6,17 +6,21 @@ use Illuminate\Support\Facades\Http;
 
 use App\Entities\SapMiddleware;
 
+use App\Models\Company;
+
 class SapRepositorySapImpl implements SapRepository
 {
+    public $companyId;
     public $baseUrl;
     public $timeout;
     public $timestamp;
 
-    function __construct($fake = null) {
+    function __construct($companyId, $fake = null) {
         if ($fake === null) {
             $fake = false;
         }
 
+        $this->companyId = $companyId;
         $this->baseUrl = config('qsrki.api.sap_middleware.url');
         $this->timeout = config('qsrki.api.sap_middleware.api_timeout');
         $this->timestamp = time();
@@ -56,6 +60,30 @@ class SapRepositorySapImpl implements SapRepository
         return $this->doHttp($path, $payload);
     }
 
+    public function uploadGiPlant($payload)
+    {
+        $path = SapMiddleware::UPLOAD_GI_PO_STO_PATH_URL;
+        return $this->doHttp($path, $payload);
+    }
+
+    public function mutationAsset($payload)
+    {
+        $path = SapMiddleware::MUTATION_ASSET_PATH_URL;
+        return $this->doHttp($path, $payload);
+    }
+
+    public function getMasterPlant($payload)
+    {
+        $path = SapMiddleware::MASTER_PLANT_PATH_URL;
+        return $this->doHttp($path, $payload);
+    }
+
+    public function getMasterMaterial($payload)
+    {
+        $path = SapMiddleware::MASTER_MATERIAL_PATH_URL;
+        return $this->doHttp($path, $payload);
+    }
+
     public function getCurrentStockPlant($payload)
     {
         $path = SapMiddleware::LIST_CURRENT_STOCK_PATH_URL;
@@ -74,9 +102,20 @@ class SapRepositorySapImpl implements SapRepository
         return $this->doHttp($path, $payload);
     }
 
+    public function getOutstandingPoPlantReport($payload)
+    {
+        return [];
+    }
+
     public function getOutstandingGr($payload)
     {
         $path = SapMiddleware::LIST_OUTSTANDING_GR_PATH_URL;
+        return $this->doHttp($path, $payload);
+    }
+
+    public function syncAsset($payload)
+    {
+        $path = SapMiddleware::MASTER_ASSET_PATH_URL;
         return $this->doHttp($path, $payload);
     }
 
@@ -194,6 +233,79 @@ class SapRepositorySapImpl implements SapRepository
             'success' => $success,
             'document_number' => '100001',
             'document_year' => '2022',
+            'logs' => [
+                [
+                    'type' => 'E',
+                    'msg' => 'Something Wrong'
+                ]
+            ]
+        ];
+
+        return Http::response($fakeResponse, $statusCode);
+    }
+
+    public function uploadGiPlantFake($success = null, $statusCode = null)
+    {
+        if ($success === null) {
+            $success = true;
+        }
+
+        if ($statusCode === null) {
+            $statusCode = 200;
+        }
+
+        $fakeResponse = [
+            [
+                'status' => 'E',
+                'message' => 'PO Number 4570001128',
+                'po_status' => [
+                    'success' => false,
+                    'message' => 'Releases Error',
+                    'document_number' => '100000001',
+                    'document_year' => '',
+                    'logs' => []
+                ],
+                'release_status' => [
+                    'success' => false,
+                    'message' => 'Releases Error',
+                    'document_number' => '100000002',
+                    'document_year' => '',
+                    'logs' => []
+                ],
+                'gi_status' => [
+                    'success' => false,
+                    'message' => 'Releases Error',
+                    'document_number' => '100000003',
+                    'document_year' => '',
+                    'logs' => []
+                ],
+            ],
+            'success' => $success,
+            'document_number' => '100001',
+            'document_year' => '2022',
+            'logs' => [
+                [
+                    'type' => 'E',
+                    'msg' => 'Something Wrong'
+                ]
+            ]
+        ];
+
+        return Http::response($fakeResponse, $statusCode);
+    }
+
+    public function mutationAssetFake($success = null, $statusCode = null)
+    {
+        if ($success === null) {
+            $success = true;
+        }
+
+        if ($statusCode === null) {
+            $statusCode = 200;
+        }
+
+        $fakeResponse = [
+            'success' => $success,
             'logs' => [
                 [
                     'type' => 'E',
@@ -350,6 +462,41 @@ class SapRepositorySapImpl implements SapRepository
         return Http::response($fakeResponse, $statusCode);
     }
 
+    public function syncAssetFake($success = null, $statusCode = null)
+    {
+        if ($success === null) {
+            $success = true;
+        }
+
+        if ($statusCode === null) {
+            $statusCode = 200;
+        }
+
+        $fakeResponse = [
+            [
+                'plant_id' => 'F103',
+                'asset_id' => '6000000150',
+                'asset_sub_id' => '00',
+                'asset_class_id' => '',
+                'asset_type_id' => '',
+                'asset_category_id' => '',
+                'activation_date' => '',
+                'name' => 'Open Table For Soup Warmer',
+                'remark' => '',
+                'user_spec' => '70 X 75 X 85',
+                'cost_center_id' => 'C3111103',
+                'cost_center_desc' => '003 RF JATOS CC',
+                'qty' => 1.000,
+                'uom_id' => 'UN',
+                'surface_area_id' => '',
+                'vendor_id' => '',
+                'vendor_name' => ''
+            ],
+        ];
+
+        return Http::response($fakeResponse, $statusCode);
+    }
+
     // utility
     private function setupHttpFake(){
         Http::fake([
@@ -358,9 +505,12 @@ class SapRepositorySapImpl implements SapRepository
             $this->baseUrl . SapMiddleware::UPLOAD_STOCK_OPNAME_PATH_URL => $this->uploadOpnameFake(false),
             $this->baseUrl . SapMiddleware::UPLOAD_GR_PO_VENDOR_PATH_URL => $this->uploadGrVendorFake(true),
             $this->baseUrl . SapMiddleware::UPLOAD_GR_PO_STO_PATH_URL => $this->uploadGrPlantFake(true),
+            $this->baseUrl . SapMiddleware::UPLOAD_GI_PO_STO_PATH_URL => $this->uploadGiPlantFake(true),
+            $this->baseUrl . SapMiddleware::MUTATION_ASSET_PATH_URL => $this->mutationAssetFake(false),
             $this->baseUrl . SapMiddleware::LIST_CURRENT_STOCK_PATH_URL => $this->getCurrentStockPlantFake(false),
             $this->baseUrl . SapMiddleware::LIST_OUTSTANDING_PO_PATH_URL => $this->getOutstandingPoPlantFake(false),
             $this->baseUrl . SapMiddleware::LIST_OUTSTANDING_GR_PATH_URL => $this->getOutstandingGrFake(false),
+            $this->baseUrl . SapMiddleware::MASTER_ASSET_PATH_URL => $this->syncAssetFake(false),
         ]);
     }
 
@@ -369,10 +519,13 @@ class SapRepositorySapImpl implements SapRepository
             $debug = false;
         }
 
+        $sapApiKey = Company::getConfigByKey($this->companyId, 'SAP_API_KEY');
+        $sapApiSecretKey = Company::getConfigByKey($this->companyId, 'SAP_API_SECRET_KEY');
+
         $url = $this->baseUrl . $path;
         $payload = json_encode($payload);
-        $signature = SapMiddleware::generateSignature($this->timestamp, $path, $payload);
-        $headers = SapMiddleware::getHeaderHttp($this->timestamp, $signature);
+        $signature = SapMiddleware::generateSignature($sapApiKey, $sapApiSecretKey, $this->timestamp, $path, $payload);
+        $headers = SapMiddleware::getHeaderHttp($sapApiKey, $this->timestamp, $signature);
 
         if ($debug) {
             $res = Http::dd()

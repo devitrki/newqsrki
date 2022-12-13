@@ -15,14 +15,16 @@ class ScheduleSendTaxFtp implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public $companyId;
+
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct($companyId)
     {
-        //
+        $this->companyId = $companyId;
     }
 
     /**
@@ -33,10 +35,11 @@ class ScheduleSendTaxFtp implements ShouldQueue
     public function handle()
     {
         $sendTaxes = DB::table('send_taxes')
-                    ->where('status', 1)
-                    ->select('id')
-                    ->distinct()
-                    ->get();
+                        ->where('company_id', $this->companyId)
+                        ->where('status', 1)
+                        ->select('id')
+                        ->distinct()
+                        ->get();
 
         $date = date('Y/m/d',strtotime("-1 days"));
 

@@ -26,13 +26,21 @@ class GrVendorServiceSapImpl implements GrVendorService
                     ->where('id', $plantId)
                     ->first();
 
+        $sapCodeComp = Company::getConfigByKey($plant->company_id, 'SAP_CODE');
+        if (!$sapCodeComp || $sapCodeComp == '') {
+            return [
+                'status' => false,
+                'message' => Lang::get('Please set SAP_CODE in company configuration'),
+            ];
+        }
+
         $param = [
-            'company_id' => $plant->company_id,
+            'company_id' => $sapCodeComp,
             'plant_id' => $plant->code,
             'is_vendor' => true
         ];
 
-        $sapRepository = new SapRepositorySapImpl(true);
+        $sapRepository = new SapRepositorySapImpl($plant->company_id);
         $sapResponse = $sapRepository->getOutstandingPoVendor($param);
 
         $outstanding = [];
@@ -58,7 +66,7 @@ class GrVendorServiceSapImpl implements GrVendorService
                     'vendor_id' => $vendor_id,
                     'vendor_name' => $v['vendor_name'],
                     'item_number' => $v['po_item'],
-                    'material_code' => $v['material_id'],
+                    'material_code' => substr($v['material_id'], -7),
                     'material_desc' => $v['material_name'],
                     'po_date' => Helper::DateConvertFormat($v['delivery_date'], 'Y-m-d', 'd-m-Y'),
                     'uom' => $v['uom_id'],
@@ -83,11 +91,11 @@ class GrVendorServiceSapImpl implements GrVendorService
         $status = true;
         $message = Lang::get("message.save.success", ["data" => Lang::get("gr po vendor")]);
 
-        $sapCodeComp = Company::getConfigByKey($companyId, 'sap_code');
+        $sapCodeComp = Company::getConfigByKey($companyId, 'SAP_CODE');
         if (!$sapCodeComp || $sapCodeComp == '') {
             return [
                 'status' => false,
-                'message' => Lang::get('Please set sap_code in company configuration'),
+                'message' => Lang::get('Please set SAP_CODE in company configuration'),
             ];
         }
 
@@ -96,7 +104,7 @@ class GrVendorServiceSapImpl implements GrVendorService
             'po_number' => $request->po_number,
             'posting_date' => Helper::DateConvertFormat($request->posting_date, 'Y/m/d', 'Y-m-d'),
             'reference_number' => $request->ref_number,
-            'delivery_note' => $request->gi_number,
+            'delivery_note' => $request->gi_number . '',
             'header_text' => '',
             'items' => [
                 'po_item' => $request->item_number,
@@ -108,8 +116,10 @@ class GrVendorServiceSapImpl implements GrVendorService
             ],
         ];
 
-        $sapRepository = new SapRepositorySapImpl(true);
+        $sapRepository = new SapRepositorySapImpl($companyId);
         $sapResponse = $sapRepository->uploadGrVendor($dataUpload);
+
+        !dd([$dataUpload, $sapResponse]);
 
         $document_number = ""; #no GR
 

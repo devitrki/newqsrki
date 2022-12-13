@@ -18,6 +18,7 @@ use App\Models\Inventory\GiPlant;
 use App\Models\Inventory\GiPlantItem;
 
 use App\Services\GiPlantServiceAppsImpl;
+use App\Services\GiPlantServiceSapImpl;
 
 class GiPlantController extends Controller
 {
@@ -247,7 +248,7 @@ class GiPlantController extends Controller
         $stat = 'success';
         $msg = Lang::get("message.upload.success", ["data" => Lang::get("gi plant")]);
 
-        $giPlantService = new GiPlantServiceAppsImpl();
+        $giPlantService = new GiPlantServiceSapImpl();
         $response = $giPlantService->uploadGiPlant($id);
         if (!$response['status']) {
             $stat = $response['status'];

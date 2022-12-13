@@ -12,6 +12,9 @@ use Illuminate\Support\Str;
 use App\Library\Helper;
 use Yajra\DataTables\DataTables;
 
+use App\Services\PlantServiceAppsImpl;
+use App\Services\PlantServiceSapImpl;
+
 use App\Models\Plant;
 
 class PlantController extends Controller
@@ -37,7 +40,7 @@ class PlantController extends Controller
                         'plants.company_id', 'plants.cost_center', 'plants.cost_center_desc', 'plants.customer_code', 'plants.email',
                         'plants.phone', 'plants.address', 'plants.hours', 'plants.drivethru', 'plants.price_category', 'plants.pos_id',
                         'plants.sloc_id_gr', 'plants.sloc_id_gr_vendor', 'plants.sloc_id_waste', 'plants.sloc_id_asset_mutation',
-                        'plants.sloc_id_current_stock',
+                        'plants.sloc_id_current_stock', 'plants.sloc_id_opname', 'plants.sloc_id_gi_plant',
                         'pdc.short_name as pdc_name', 'areas.area', 'plants.dc_id', 'plants.area_id', 'companies.name as company_name',
                         'pos.name as pos_name']);
 
@@ -86,7 +89,7 @@ class PlantController extends Controller
             }
         }
 
-        $query = $query->where(function($query) use ($request){
+        $query = $query->where(function($query) use ($request, $userAuth){
 
             if ($request->has('type')) {
                 if ($request->query('type') != 'dc') {
@@ -96,7 +99,7 @@ class PlantController extends Controller
                 }
             }
 
-            $query = $query->where(function($query) use ($request){
+            $query = $query->where(function($query) use ($request, $userAuth){
                 if ($request->has('auth')) {
                     if ($request->query('auth') == 'true') {
                         $plants_auth = Plant::getPlantsIdByUserId(Auth::id());
@@ -178,11 +181,13 @@ class PlantController extends Controller
         $plant->drivethru = $request->drivethru;
         $plant->pos_id = $request->pos;
         $plant->price_category = $request->price_category;
+        $plant->sloc_id_gi_plant = $request->sloc_id_gi_plant;
         $plant->sloc_id_gr = $request->sloc_id_gr;
         $plant->sloc_id_gr_vendor = $request->sloc_id_gr_vendor;
         $plant->sloc_id_waste = $request->sloc_id_waste;
         $plant->sloc_id_asset_mutation = $request->sloc_id_asset_mutation;
         $plant->sloc_id_current_stock = $request->sloc_id_current_stock;
+        $plant->sloc_id_opname = $request->sloc_id_opname;
         if ($plant->save()) {
             $stat = 'success';
             $msg = Lang::get("message.update.success", ["data" => Lang::get("plant")]);
@@ -197,65 +202,16 @@ class PlantController extends Controller
 
     public function sync(Request $request)
     {
-        $response = Http::get(config('qsrki.api.apps.url') . 'recheese/daily-sales/sap/plant');
-        if($response->ok()){
-            $plants = $response->json();
+        $stat = 'success';
+        $msg = Lang::get("message.sync.success", ["data" => Lang::get("plant")]);
 
-            $userAuth = $request->get('userAuth');
+        $userAuth = $request->get('userAuth');
 
-            DB::beginTransaction();
-            $success = true;
-            foreach ($plants as $p) {
-
-                if(!in_array($p['WERKS'][0], ['F','R']) ){
-                    continue;
-                }
-
-                $count_plant = Plant::where('code', $p['WERKS'])->where('company_id', $userAuth->company_id_selected)->count();
-                if ($count_plant > 0) {
-                    // update plant
-                    $plant = Plant::where('code', $p['WERKS'])->first();
-                    $plant->short_name = $this->cleanInisialPlant($p['NAME1']);
-                    $plant->description = $p['NAME1'];
-                    $plant->initital = $this->getInitialPlant($p['WERKS']);
-                    $plant->type = ($this->getTypePlant($p['WERKS']) != 'Outlet') ? 2 : 1 ;
-                    $plant->address = $p['STRAS'] . ' ' . $p['ORT01'];
-                    if(!$plant->save()){
-                        $success = false;
-                        break;
-                    }
-                } else {
-                    // insert plant
-                    $plant = new Plant;
-                    $plant->company_id = $userAuth->company_id_selected;
-                    $plant->code = $p['WERKS'];
-                    $plant->short_name = $this->cleanInisialPlant($p['NAME1']);
-                    $plant->description = $p['NAME1'];
-                    $plant->initital = $this->getInitialPlant($p['WERKS']);
-                    $plant->type = ($this->getTypePlant($p['WERKS']) != 'Outlet') ? 2 : 1 ;
-                    $plant->address = $p['STRAS'] . ' ' . $p['ORT01'];
-                    $plant->status = 1;
-
-                    if(!$plant->save()){
-                        $success = false;
-                        break;
-                    }
-                }
-            }
-
-            if($success){
-                DB::commit();
-                $stat = 'success';
-                $msg = Lang::get("message.sync.success", ["data" => Lang::get("plant")]);
-            }else{
-                DB::rollback();
-                $stat = 'failed';
-                $msg = Lang::get("message.sync.failed", ["data" => Lang::get("plant")]);
-            }
-
-        } else {
-            $stat = 'failed';
-            $msg = Lang::get("message.sync.failed", ["data" => Lang::get("plant")]);
+        $plantService = new PlantServiceSapImpl();
+        $response = $plantService->syncPlant($userAuth->company_id_selected);
+        if (!$response['status']) {
+            $stat = $response['status'];
+            $msg = $response['message'];
         }
 
         return response()->json( Helper::resJSON( $stat, $msg ) );

@@ -8,19 +8,23 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Lang;
 use App\Library\Helper;
-use DataTables;
+use Yajra\DataTables\DataTables;
 
 use App\Mail\Financeacc\Assets\NotificationMutation;
 use App\Mail\Financeacc\Assets\NotificationRequestMutation;
 
+use App\Models\User;
+use App\Models\Plant;
+use App\Models\Configuration;
 use App\Models\Financeacc\Asset;
 use App\Models\Financeacc\AssetMutation;
 use App\Models\Financeacc\AssetRequestMutation;
-use App\Models\Plant;
-use App\Models\Configuration;
 use App\Models\Financeacc\AssetAdminDepart;
-use App\Models\User;
+
+use App\Services\AssetServiceAppsImpl;
+use App\Services\AssetServiceSapImpl;
 
 use App\Rules\CheckAmPlant;
 
@@ -28,12 +32,14 @@ class AssetController extends Controller
 {
     public function index(Request $request)
     {
+        $userAuth = $request->get('userAuth');
+
         // get first plant user
         $user = User::find(Auth::id());
         $plantUser = 'all';
 
         if($user->hasRole('store manager')){
-            $first_plant_id = Plant::getFirstPlantIdSelect(true, 'all');
+            $first_plant_id = Plant::getFirstPlantIdSelect($userAuth->company_id_selected, 'all', true);
             $first_plant_name = Plant::getShortNameById($first_plant_id);
 
             // check dc / outlet
@@ -44,13 +50,13 @@ class AssetController extends Controller
             }
 
         } else {
-            $first_plant_id = Plant::getFirstPlantIdSelect(true, 'all');
+            $first_plant_id = Plant::getFirstPlantIdSelect($userAuth->company_id_selected, 'all', true);
             $first_plant_name = Plant::getShortNameById($first_plant_id);
         }
 
         $mutation = false;
-        $statusAssetSoOutlet = Configuration::getValueByKeyFor('financeacc', 'status_outlet_asset_so');
-        $statusAssetSoDC = Configuration::getValueByKeyFor('financeacc', 'status_dc_asset_so');
+        $statusAssetSoOutlet = Configuration::getValueCompByKeyFor($userAuth->company_id_selected, 'financeacc', 'status_outlet_asset_so');
+        $statusAssetSoDC = Configuration::getValueCompByKeyFor($userAuth->company_id_selected, 'financeacc', 'status_dc_asset_so');
 
         if ($statusAssetSoOutlet != 'Running' && $statusAssetSoDC != 'Running') {
             $mutation = true;
@@ -64,6 +70,7 @@ class AssetController extends Controller
             'mutation' => $mutation,
             'plant_user' => $plantUser,
         ];
+
         return view('financeacc.asset-list', $dataview)->render();
     }
 
@@ -135,53 +142,15 @@ class AssetController extends Controller
             'plant' => 'required|exists:plants,id',
         ]);
 
-        $plant_code = Plant::getCodeById($request->plant);
-        $response = Http::get(config('qsrki.api.apps.url') . 'recheese/daily-sales/sap/asset/list?plant='. $plant_code);
+        $stat = 'success';
+        $msg = Lang::get("message.sync.success", ["data" => Lang::get("asset")]);
 
-        if ($response->ok()) {
+        $assetService = new AssetServiceSapImpl();
+        $response = $assetService->syncAsset($request->plant);
 
-            $assetsaps = $response->json();
-
-            DB::beginTransaction();
-            $inserts = [];
-
-            // delete asset exist plant
-            DB::table('assets')->where('plant_id', $request->plant)->delete();
-
-            // setup insert all data from sap
-            foreach ($assetsaps as $assetsap) {
-
-                $inserts[] = [
-                    'number' => $assetsap['asset_number'],
-                    'number_sub' => $assetsap['sub_number'],
-                    'plant_id' => $request->plant,
-                    'description' => $assetsap['description'],
-                    'spec_user' => $assetsap['spec_user'],
-                    'qty_web' => round($assetsap['qty']),
-                    'uom' => $assetsap['uom'],
-                    'cost_center' => $assetsap['cost_center'],
-                    'cost_center_code' => $assetsap['cc_code'],
-                    'remark' => $assetsap['remark'],
-                    "created_at" =>  \Carbon\Carbon::now(), # new \Datetime()
-                    "updated_at" => \Carbon\Carbon::now(),
-                ];
-
-            }
-
-            $success = DB::table('assets')->insert($inserts);
-
-            if ($success) {
-                DB::commit();
-                $stat = 'success';
-                $msg = \Lang::get("message.sync.success", ["data" => \Lang::get("asset")]);
-            } else {
-                DB::rollback();
-                $stat = 'failed';
-                $msg = \Lang::get("message.sync.failed", ["data" => \Lang::get("asset")]);
-            }
-        } else {
-            $stat = 'failed';
-            $msg = \Lang::get("message.sync.failed", ["data" => \Lang::get("asset")]);
+        if (!$response['status']) {
+            $stat = $response['status'];
+            $msg = $response['message'];
         }
 
         return response()->json(Helper::resJSON($stat, $msg));
@@ -236,7 +205,7 @@ class AssetController extends Controller
 
             if( $rmID == '0' ){
                 $stat = 'failed';
-                $msg = \Lang::get("Your's RM Not Yet Mapping.");
+                $msg = Lang::get("Your's RM Not Yet Mapping.");
                 return response()->json(Helper::resJSON($stat, $msg));
             }
 
@@ -260,12 +229,12 @@ class AssetController extends Controller
             $hodId = User::getHodIdByDepartmentId($departmentId);
             if( $hodId == '0' ){
                 $stat = 'failed';
-                $msg = \Lang::get("Your's HOD Not Yet Mapping.");
+                $msg = Lang::get("Your's HOD Not Yet Mapping.");
                 return response()->json(Helper::resJSON($stat, $msg));
             }
             if( $typePlantFrom != 'DC' ){
                 $stat = 'failed';
-                $msg = \Lang::get("Admin department only request transfer asset from DC.");
+                $msg = Lang::get("Admin department only request transfer asset from DC.");
                 return response()->json(Helper::resJSON($stat, $msg));
             }
 
@@ -283,7 +252,7 @@ class AssetController extends Controller
                 // check bahwa requestor harus AM Pengirim / AM Outlet
                 if($requestor != 'AM Sender'){
                     $stat = 'failed';
-                    $msg = \Lang::get("Asset transfer from outlet to HO, request must be AM outlet.");
+                    $msg = Lang::get("Asset transfer from outlet to HO, request must be AM outlet.");
                     return response()->json(Helper::resJSON($stat, $msg));
                 }
 
@@ -292,13 +261,13 @@ class AssetController extends Controller
 
                 if( $adminDepartReceiver == '0' ){
                     $stat = 'failed';
-                    $msg = \Lang::get("Admin department receiver not yet mapping.");
+                    $msg = Lang::get("Admin department receiver not yet mapping.");
                     return response()->json(Helper::resJSON($stat, $msg));
                 }
 
                 if( $hodDepartReceiver == '0' ){
                     $stat = 'failed';
-                    $msg = \Lang::get("HOD department receiver not yet mapping.");
+                    $msg = Lang::get("HOD department receiver not yet mapping.");
                     return response()->json(Helper::resJSON($stat, $msg));
                 }
 
@@ -312,7 +281,7 @@ class AssetController extends Controller
                 // check bahwa requestor harus AM Pengirim / AM Outlet
                 if($requestor != 'AM Sender'){
                     $stat = 'failed';
-                    $msg = \Lang::get("Asset transfer from outlet to DC, request must be AM outlet.");
+                    $msg = Lang::get("Asset transfer from outlet to DC, request must be AM outlet.");
                     return response()->json(Helper::resJSON($stat, $msg));
                 }
 
@@ -328,14 +297,14 @@ class AssetController extends Controller
             // check mutasi harus beda plant
             if($request->plant_sender == $request->plant_receiver){
                 $stat = 'failed';
-                $msg = \Lang::get("Asset transfer from outlet to outlet, request must different outlet");
+                $msg = Lang::get("Asset transfer from outlet to outlet, request must different outlet");
                 return response()->json(Helper::resJSON($stat, $msg));
             }
 
             // check bahwa requestor harus AM Penerima
             if($requestor != 'AM Receiver'){
                 $stat = 'failed';
-                $msg = \Lang::get("Asset transfer from outlet to outlet, request must be AM receiver.");
+                $msg = Lang::get("Asset transfer from outlet to outlet, request must be AM receiver.");
                 return response()->json(Helper::resJSON($stat, $msg));
             }
 
@@ -351,7 +320,7 @@ class AssetController extends Controller
                 // check bahwa requestor harus AM Penerima
                 if($requestor != 'AM Sender'){
                     $stat = 'failed';
-                    $msg = \Lang::get("Asset transfer from DC to DC, request must be SPV DC sender.");
+                    $msg = Lang::get("Asset transfer from DC to DC, request must be SPV DC sender.");
                     return response()->json(Helper::resJSON($stat, $msg));
                 }
                 $requestor = 'SPV DC Sender';
@@ -370,20 +339,20 @@ class AssetController extends Controller
 
                     if( $adminDepartSender == '0' ){
                         $stat = 'failed';
-                        $msg = \Lang::get("Admin department sender not yet mapping.");
+                        $msg = Lang::get("Admin department sender not yet mapping.");
                         return response()->json(Helper::resJSON($stat, $msg));
                     }
 
                     if( $hodDepartSender == '0' ){
                         $stat = 'failed';
-                        $msg = \Lang::get("HOD department sender not yet mapping.");
+                        $msg = Lang::get("HOD department sender not yet mapping.");
                         return response()->json(Helper::resJSON($stat, $msg));
                     }
 
                     // requestor must admin depart sender
                     if( $adminDepartSender != $user->id ){
                         $stat = 'failed';
-                        $msg = \Lang::get("Request asset transfer from HO to DC must admin department sender.");
+                        $msg = Lang::get("Request asset transfer from HO to DC must admin department sender.");
                         return response()->json(Helper::resJSON($stat, $msg));
                     }
 
@@ -400,20 +369,20 @@ class AssetController extends Controller
                     // DC -> HO
                     if( $adminDepartReceiver == '0' ){
                         $stat = 'failed';
-                        $msg = \Lang::get("Admin department receiver not yet mapping.");
+                        $msg = Lang::get("Admin department receiver not yet mapping.");
                         return response()->json(Helper::resJSON($stat, $msg));
                     }
 
                     if( $hodDepartReceiver == '0' ){
                         $stat = 'failed';
-                        $msg = \Lang::get("HOD department receiver not yet mapping.");
+                        $msg = Lang::get("HOD department receiver not yet mapping.");
                         return response()->json(Helper::resJSON($stat, $msg));
                     }
 
                     // requestor must admin depart receiver
                     if( $adminDepartReceiver != $user->id ){
                         $stat = 'failed';
-                        $msg = \Lang::get("Request asset transfer from DC to HO must admin department receiver.");
+                        $msg = Lang::get("Request asset transfer from DC to HO must admin department receiver.");
                         return response()->json(Helper::resJSON($stat, $msg));
                     }
 
@@ -432,38 +401,38 @@ class AssetController extends Controller
                     // check cost center not same
                     if($request->cost_center_receiver == $request->cost_center){
                         $stat = 'failed';
-                        $msg = \Lang::get("Asset transfer from cost center to cost center, must different.");
+                        $msg = Lang::get("Asset transfer from cost center to cost center, must different.");
                         return response()->json(Helper::resJSON($stat, $msg));
                     }
 
                     if( $adminDepartSender == '0' ){
                         $stat = 'failed';
-                        $msg = \Lang::get("Admin department sender not yet mapping.");
+                        $msg = Lang::get("Admin department sender not yet mapping.");
                         return response()->json(Helper::resJSON($stat, $msg));
                     }
 
                     if( $hodDepartSender == '0' ){
                         $stat = 'failed';
-                        $msg = \Lang::get("HOD department sender not yet mapping.");
+                        $msg = Lang::get("HOD department sender not yet mapping.");
                         return response()->json(Helper::resJSON($stat, $msg));
                     }
 
                     if( $adminDepartReceiver == '0' ){
                         $stat = 'failed';
-                        $msg = \Lang::get("Admin department receiver not yet mapping.");
+                        $msg = Lang::get("Admin department receiver not yet mapping.");
                         return response()->json(Helper::resJSON($stat, $msg));
                     }
 
                     if( $hodDepartReceiver == '0' ){
                         $stat = 'failed';
-                        $msg = \Lang::get("HOD department receiver not yet mapping.");
+                        $msg = Lang::get("HOD department receiver not yet mapping.");
                         return response()->json(Helper::resJSON($stat, $msg));
                     }
 
                     // requestor must admin depart receiver
                     if( $adminDepartReceiver != $user->id ){
                         $stat = 'failed';
-                        $msg = \Lang::get("Request asset transfer from cost center to cost center must admin department receiver.");
+                        $msg = Lang::get("Request asset transfer from cost center to cost center must admin department receiver.");
                         return response()->json(Helper::resJSON($stat, $msg));
                     }
 
@@ -490,7 +459,7 @@ class AssetController extends Controller
 
                 if( !in_array($requestor, ['Admin Department', 'AM Receiver']) ){
                     $stat = 'failed';
-                    $msg = \Lang::get("Request asset transfer from HO must admin department or AM Receiver.");
+                    $msg = Lang::get("Request asset transfer from HO must admin department or AM Receiver.");
                     return response()->json(Helper::resJSON($stat, $msg));
                 }
 
@@ -500,20 +469,20 @@ class AssetController extends Controller
 
                 if( $adminDepartSender == '0' ){
                     $stat = 'failed';
-                    $msg = \Lang::get("Admin department sender not yet mapping.");
+                    $msg = Lang::get("Admin department sender not yet mapping.");
                     return response()->json(Helper::resJSON($stat, $msg));
                 }
 
                 if( $hodDepartSender == '0' ){
                     $stat = 'failed';
-                    $msg = \Lang::get("HOD department sender not yet mapping.");
+                    $msg = Lang::get("HOD department sender not yet mapping.");
                     return response()->json(Helper::resJSON($stat, $msg));
                 }
 
                 if( $requestor == 'Admin Department' ){
                     if( $adminDepartSender != $user->id ){
                         $stat = 'failed';
-                        $msg = \Lang::get("Request asset transfer from HO to outlet must admin department sender.");
+                        $msg = Lang::get("Request asset transfer from HO to outlet must admin department sender.");
                         return response()->json(Helper::resJSON($stat, $msg));
                     }
 
@@ -562,6 +531,7 @@ class AssetController extends Controller
                     ->first();
 
         $assetMutation = new AssetMutation;
+        $assetMutation->company_id = $asset->company_id;
         $assetMutation->number = $asset->number;
         $assetMutation->number_sub = $asset->number_sub;
         $assetMutation->description = $asset->description;
@@ -611,13 +581,13 @@ class AssetController extends Controller
         if ($assetMutation->save()) {
 
             // send email
-            Mail::send(new NotificationMutation($assetMutation->id));
+            Mail::queue(new NotificationMutation($assetMutation->id));
 
             $stat = 'success';
-            $msg = \Lang::get("message.save.success", ["data" => \Lang::get("asset transfer")]);
+            $msg = Lang::get("message.save.success", ["data" => Lang::get("asset transfer")]);
         } else {
             $stat = 'failed';
-            $msg = \Lang::get("message.save.failed", ["data" => \Lang::get("asset transfer")]);
+            $msg = Lang::get("message.save.failed", ["data" => Lang::get("asset transfer")]);
         }
 
         return response()->json(Helper::resJSON($stat, $msg));
@@ -641,7 +611,7 @@ class AssetController extends Controller
             $rmID = plant::getRMIdByAm($user->id);
             if( $rmID == '0' ){
                 $stat = 'failed';
-                $msg = \Lang::get("Your's RM Not Yet Mapping.");
+                $msg = Lang::get("Your's RM Not Yet Mapping.");
                 return response()->json(Helper::resJSON($stat, $msg));
             }
 
@@ -653,7 +623,7 @@ class AssetController extends Controller
             $hodId = User::getHodIdByDepartmentId($departmentId);
             if( $hodId == '0' ){
                 $stat = 'failed';
-                $msg = \Lang::get("Your's HOD Not Yet Mapping.");
+                $msg = Lang::get("Your's HOD Not Yet Mapping.");
                 return response()->json(Helper::resJSON($stat, $msg));
             }
             $levelRequest = 'bo'; // back office
@@ -668,6 +638,7 @@ class AssetController extends Controller
                     ->first();
 
         $assetRequestMutation = new AssetRequestMutation;
+        $assetRequestMutation->company_id = $asset->company_id;
         $assetRequestMutation->number = $asset->number;
         $assetRequestMutation->number_sub = $asset->number_sub;
         $assetRequestMutation->description = $asset->description;
@@ -704,13 +675,13 @@ class AssetController extends Controller
         if ($assetRequestMutation->save()) {
 
             // send email notification
-            Mail::send(new NotificationRequestMutation($assetRequestMutation->id));
+            Mail::queue(new NotificationRequestMutation($assetRequestMutation->id));
 
             $stat = 'success';
-            $msg = \Lang::get("message.save.success", ["data" => \Lang::get("request asset transfer")]);
+            $msg = Lang::get("message.save.success", ["data" => Lang::get("request asset transfer")]);
         } else {
             $stat = 'failed';
-            $msg = \Lang::get("message.save.failed", ["data" => \Lang::get("request asset transfer")]);
+            $msg = Lang::get("message.save.failed", ["data" => Lang::get("request asset transfer")]);
         }
 
         return response()->json(Helper::resJSON($stat, $msg));
@@ -770,13 +741,13 @@ class AssetController extends Controller
 
         if($assetMutation->save()){
             // send email
-            Mail::send(new NotificationMutation($assetMutation->id));
+            Mail::queue(new NotificationMutation($assetMutation->id));
 
             $stat = 'success';
-            $msg = \Lang::get("message.cancel.success", ["data" => \Lang::get("asset transfer")]);
+            $msg = Lang::get("message.cancel.success", ["data" => Lang::get("asset transfer")]);
         }else {
             $stat = 'failed';
-            $msg = \Lang::get("message.cancel.failed", ["data" => \Lang::get("asset transfer")]);
+            $msg = Lang::get("message.cancel.failed", ["data" => Lang::get("asset transfer")]);
         }
 
         return response()->json(Helper::resJSON($stat, $msg));
@@ -798,10 +769,10 @@ class AssetController extends Controller
 
         if($assetRequestMutation->save()){
             $stat = 'success';
-            $msg = \Lang::get("message.cancel.success", ["data" => \Lang::get("request asset transfer")]);
+            $msg = Lang::get("message.cancel.success", ["data" => Lang::get("request asset transfer")]);
         }else {
             $stat = 'failed';
-            $msg = \Lang::get("message.cancel.failed", ["data" => \Lang::get("request asset transfer")]);
+            $msg = Lang::get("message.cancel.failed", ["data" => Lang::get("request asset transfer")]);
         }
 
         return response()->json(Helper::resJSON($stat, $msg));

@@ -35,7 +35,7 @@ class SelisihAssetSoExport implements WithMultipleSheets
                             ->where('asset_so_plants.asset_so_id', $this->assetSoId)
                             ->where('qty_selisih', '<>', '0')
                             ->select('asset_so_plants.id', 'plants.short_name', 'asset_so_plants.cost_center', 'plants.code')
-                            ->groupBy('asset_so_plants.id', 'plants.short_name', 'asset_so_plants.cost_center');
+                            ->groupBy('asset_so_plants.id', 'plants.short_name', 'asset_so_plants.cost_center', 'plants.code');
 
         if ($this->typePlant != 'dc') {
             // outlet
