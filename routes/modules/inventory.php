@@ -136,4 +136,4 @@ Route::get('waste/submit/{id}', [WasteController::class, 'submit']);
 Route::get('waste/items/{id}', [WasteController::class, 'getItemsWaste']);
 Route::post('waste/update', [WasteController::class, 'updateDocNumber']);
 
-Route::resource('configuration', ConfigurationController::class)->except(['show']);
+Route::resource('configuration-inventory', ConfigurationController::class)->except(['show']);

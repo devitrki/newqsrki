@@ -751,7 +751,7 @@ class MenuSeeder extends Seeder
         $inventory_conf_menu->path = "41,58"; // path menu id for easy get structur
         $inventory_conf_menu->name = "Inventory Configuration";
         $inventory_conf_menu->description = "Menu for manage configuration inventory";
-        $inventory_conf_menu->url = "inventory/configuration";
+        $inventory_conf_menu->url = "inventory/configuration-inventory";
         $inventory_conf_menu->permission_menu = "C,R,U,D";
         $inventory_conf_menu->sort_order = 7;
         $inventory_conf_menu->flag_end = 1;
