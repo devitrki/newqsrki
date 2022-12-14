@@ -195,9 +195,7 @@
     </x-slot>
 </x-modal>
 <!-- end modal -->
-<script src="{{ asset('vendors/js/editors/quill/katex.min.js') }}"></script>
-<script src="{{ asset('vendors/js/editors/quill/highlight.min.js') }}"></script>
-<script src="{{ asset('vendors/js/editors/quill/quill.min.js') }}"></script>
+
 <script>
 var snowEditor{{$dom}} = new Quill('#snow-container{{$dom}} .editor', {
     bounds: '#snow-container{{$dom}} .editor',

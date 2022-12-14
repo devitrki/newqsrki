@@ -104,6 +104,9 @@
     <script src="{{ asset('vendor/js/critical/critical.min.js') }}"></script>
     <script defer src="{{ asset('vendor/js/noncritical/noncritical.min.js') }}"></script>
     <script defer src="{{ asset('vendor/js/noncritical/jquery.inputmask.min.js') }}"></script>
+    <script defer src="{{ asset('vendors/js/editors/quill/katex.min.js') }}"></script>
+    <script defer src="{{ asset('vendors/js/editors/quill/highlight.min.js') }}"></script>
+    <script defer src="{{ asset('vendors/js/editors/quill/quill.min.js') }}"></script>
 
     <script defer type="text/javascript">
 
