@@ -111,7 +111,7 @@
                     ]
                 ];
             @endphp
-            <x-datatable-serverside :dom="$dom" compid="tabledata" :tabmenu="$menu_id" :columns="$columns" url="application/general-configuration/configuration/dtble" :select="[true, 'multiple']" />
+            <x-datatable-serverside :dom="$dom" compid="tabledata" :tabmenu="$menu_id" :columns="$columns" url="application/general-configuration/configuration/dtble" :select="[true, 'multiple']"/>
         </div>
     </div>
 </x-card-scroll>

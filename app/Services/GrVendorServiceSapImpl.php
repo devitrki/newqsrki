@@ -107,19 +107,19 @@ class GrVendorServiceSapImpl implements GrVendorService
             'delivery_note' => $request->gi_number . '',
             'header_text' => '',
             'items' => [
-                'po_item' => $request->item_number,
-                'movement_type_id' => '',
-                'material_id' => $request->material_code,
-                'qty_entry' => (float)$request->qty_gr,
-                'receiver' => $request->recepient,
-                'sloc_id' => Plant::getSlocIdGrVendor($request->plant_id),
+                [
+                    'po_item' => $request->item_number,
+                    'movement_type_id' => '',
+                    'material_id' => $request->material_code,
+                    'qty_entry' => (float)$request->qty_gr,
+                    'receiver' => $request->recepient,
+                    'sloc_id' => Plant::getSlocIdGrVendor($request->plant_id),
+                ]
             ],
         ];
 
         $sapRepository = new SapRepositorySapImpl($companyId);
         $sapResponse = $sapRepository->uploadGrVendor($dataUpload);
-
-        !dd([$dataUpload, $sapResponse]);
 
         $document_number = ""; #no GR
 

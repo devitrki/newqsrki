@@ -121,6 +121,11 @@
     },
     func: {
         show: function () {
+            if (!fslctfplant{{$dom}}.get()) {
+                message.info('{{ __("Please choose plant first") }}');
+                return false
+            }
+
             loading('start', '{{ __("Generate Report") }}', 'process');
 
             var url = {{$dom}}.url.report + '?plant-id=' + fslctfplant{{$dom}}.get() +

@@ -136,7 +136,7 @@ class OpnameServiceSapImpl implements OpnameService
 
         $dataUpload = $this->getOpnameFormat($opname, $sapCodeComp);
 
-        $sapRepository = new SapRepositorySapImpl($opname->company_id, true);
+        $sapRepository = new SapRepositorySapImpl($opname->company_id);
         $sapResponse = $sapRepository->uploadOpname($dataUpload);
 
         if ($sapResponse['status']) {

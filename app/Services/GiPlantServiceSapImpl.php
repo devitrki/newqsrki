@@ -39,14 +39,13 @@ class GiPlantServiceSapImpl implements GiPlantService
             'ref_doc_no' => $data_gi['header']->issuer,
             'bill_of_ladding' => '',
             'gr_slip' => '',
-            'header_text' => '',
-            'posting_date' => Helper::DateConvertFormat($data_gi['header']->date, 'Y-m-d', 'Ymd'),
-            'document_date' => Helper::DateConvertFormat($data_gi['header']->date, 'Y-m-d', 'Ymd'),
+            'header_text' => 'WEB TRANSFER',
+            'posting_date' => $data_gi['header']->date,
+            'document_date' => $data_gi['header']->date,
             'items' => []
         ];
 
         $coind = 1;
-        $cokey = Helper::getKeySap();
 
         foreach ($data_gi['items'] as $giItem) {
             $dataUpload['items'][] = [
@@ -56,20 +55,77 @@ class GiPlantServiceSapImpl implements GiPlantService
                 'uom_id' => (strtolower($giItem->uom) == 'pac') ? 'PAK' : $giItem->uom,
                 'sloc_id' => Plant::getSlocIdGiPlant($data_gi['header']->receiving_plant_id),
                 'item_text' => '',
-                'gr_receipt' => $cokey,
+                'gr_receipt' => $data_gi['header']->requester,
                 'plant_id' => $data_gi['header']->receiving_plant_code,
             ];
             $coind += 1;
         }
 
-        !dd($dataUpload);
-
-        $sapRepository = new SapRepositorySapImpl($data_gi['header']->company_id, true);
+        $sapRepository = new SapRepositorySapImpl($data_gi['header']->company_id);
         $sapResponse = $sapRepository->uploadGiPlant($dataUpload);
 
-        $document_number = ""; #no GR
+        $document_number = ""; #no gi
+        $document_posto = ""; #no po sto
 
         if ($sapResponse['status']) {
+            $resSap = $sapResponse['response'];
+            $lastRespSap = $resSap[sizeof($resSap) - 1];
+
+            if ($lastRespSap['status'] == 'S') {
+
+                if (strtolower($lastRespSap['stat1']) == "x" &&
+                    strtolower($lastRespSap['stat2']) == "x" &&
+                    strtolower($lastRespSap['stat3']) == "x" &&
+                    $lastRespSap['gi_status']['success'] &&
+                    $lastRespSap['po_status']['success'] &&
+                    $lastRespSap['gi_status']['document_number'] != '' &&
+                    $lastRespSap['po_status']['document_number'] != ''
+                    )
+                {
+                    $document_number = $lastRespSap['gi_status']['document_number'];
+                    $document_posto = $lastRespSap['po_status']['document_number'];
+                    $message = Lang::get("message.upload.success", ["data" => Lang::get("gi plant")]);
+                } else {
+                    $status = false;
+
+                    if ($lastRespSap['po_status']['success']) {
+                        if ($lastRespSap['po_status']['document_number'] != "") {
+                            $document_posto = $lastRespSap['po_status']['document_number'];
+                            $message = Lang::get("POSTO numbers have been created, but not GI numbers. Please resend a few minutes later");
+                        }
+                    }
+                }
+
+            }  else {
+                $status = false;
+
+                if (isset($lastRespSap['message'])) {
+                    $message = Lang::get("Feedback SAP") .  ' : '  . $lastRespSap['message'];
+                } else {
+                    $message = Lang::get("Sorry, an error occurred, please try again later");
+                }
+
+                if ($lastRespSap['po_status']['success']) {
+                    if ($lastRespSap['po_status']['document_number'] != "") {
+                        $document_posto = $lastRespSap['po_status']['document_number'];
+                        $message = Lang::get("POSTO numbers have been created, but not GI numbers. Please resend a few minutes later");
+                    }
+                }
+            }
+
+            $giPlant = GiPlant::find($giPlantId);
+            $giPlant->json_sap = json_encode($dataUpload);
+            if($document_number != ''){
+                $giPlant->document_number = $document_number;
+            }
+            if($document_posto != ''){
+                $giPlant->document_posto = $document_posto;
+            }
+
+            if(!$giPlant->save()){
+                $status = false;
+                $message = Lang::get("Sorry, an error occurred when save to database, please try again later");
+            }
 
         } else {
             $status = false;

@@ -122,6 +122,8 @@ class PettycashServiceAppsImpl implements PettycashService
 
             $data_posted = array_merge($header, $dataSubmited);
 
+            !dd($data_posted);
+
             $sapRepository = new SapRepositoryAppsImpl();
             $sapResponse = $sapRepository->uploadPettyCash($data_posted);
 

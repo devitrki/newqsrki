@@ -695,7 +695,7 @@ class AssetMutationController extends Controller
             $assetService = new AssetServiceSapImpl();
             $response = $assetService->mutationAsset($assetMutation);
             $msg = $response['message'];
-            if (!$response['status']) {
+            if ($response['status']) {
                 $stat = 'success';
             } else {
                 $stat = 'failed';

@@ -143,35 +143,4 @@ class AlohaRepository {
                 ')
                 ->get();
     }
-
-    // SELECT g.SecondaryStoreID AS StoreID,
-	// 		s.DateOfBusiness AS Date,
-	// 		(
-	// 		SELECT TOP 1 a.SystemDate
-	// 		FROM dbo.dpvHstGndItem a
-	// 		WHERE a.DateOfBusiness = s.DateOfBusiness AND
-	// 				a.CheckNumber = s.CheckNumber AND
-	// 				a.FKStoreID = s.FKStoreID
-	// 		) AS SystemDate,
-	// 		s.CheckNumber,
-	// 		ROUND(
-	// 		SUM(
-	// 		CASE
-	// 			WHEN (s.type = 4) THEN s.Amount / 1.1
-	// 			ELSE s.Amount
-	// 		END
-	// 		), 0, 1) AS Total,
-	// 		ROUND(
-	// 		SUM(
-	// 		CASE
-	// 			WHEN (s.type = 4) THEN 0
-	// 			ELSE s.Amount
-	// 		END
-	// 		), 0, 1) AS TotalDiscount
-	// 	FROM dbo.dpvHstGndSale s
-	// 	LEFT JOIN dbo.gblStore g ON g.storeID = s.FKStoreID
-	// 	WHERE s.DateOfBusiness = ? AND g.SecondaryStoreID = ? AND s.type IN (4,5,6)
-	// 	GROUP BY g.SecondaryStoreID, s.DateOfBusiness, s.CheckNumber,s.FKStoreID`,
-	// 	date, storeCode).Scan(&taxes)
-
 }

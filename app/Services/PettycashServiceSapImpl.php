@@ -10,6 +10,8 @@ use App\Models\Company;
 use App\Models\Configuration;
 use App\Models\Financeacc\Pettycash;
 
+use App\Library\Helper;
+
 use App\Repositories\SapRepositorySapImpl;
 use App\Entities\SapMiddleware;
 
@@ -119,8 +121,11 @@ class PettycashServiceSapImpl implements PettycashService
             $desc_trans = Pettycash::getDescToSAP($unique_items, $plantShortName, $plantId);
             $ref = Plant::getShortNameById($plantId);
 
+            $documentKey = Helper::getKeySap();
+
             $data_posted = [
                 'company_id' => $sapCodeComp, // change to sap code company
+                'document_key' => $documentKey,
                 'transaction_type' => 'K',
                 'vendor_id' => $vendor,
                 'invoice_date' => date("Y-m-d", strtotime($receiveDate)),
@@ -131,7 +136,7 @@ class PettycashServiceSapImpl implements PettycashService
                 'items' => $dataSubmited
             ];
 
-            $sapRepository = new SapRepositorySapImpl($companyId, true);
+            $sapRepository = new SapRepositorySapImpl($companyId);
             $sapResponse = $sapRepository->uploadPettyCash($data_posted);
             if ($sapResponse['status']) {
                 $resSap = $sapResponse['response'];

@@ -127,7 +127,7 @@ class AssetServiceSapImpl implements AssetService
             'sloc_id' => Plant::getSlocIdAssetMutation($assetMutation->to_plant_id),
         ];
 
-        $sapRepository = new SapRepositorySapImpl($assetMutation->company_id, true);
+        $sapRepository = new SapRepositorySapImpl($assetMutation->company_id);
         $sapResponse = $sapRepository->mutationAsset($payload);
 
         if ($sapResponse['status']) {

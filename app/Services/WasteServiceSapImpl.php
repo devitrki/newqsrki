@@ -71,7 +71,7 @@ class WasteServiceSapImpl implements WasteService
 
         }
 
-        $sapRepository = new SapRepositorySapImpl($companyId, true);
+        $sapRepository = new SapRepositorySapImpl($companyId);
         $sapResponse = $sapRepository->uploadWaste($dataUpload);
 
         if ($sapResponse['status']) {

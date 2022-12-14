@@ -9,6 +9,7 @@ use App\Repositories\SapRepositorySapImpl;
 
 use App\Models\Material;
 use App\Models\Company;
+use App\Models\Plant;
 
 class MaterialServiceSapImpl implements MaterialService
 {
@@ -25,9 +26,12 @@ class MaterialServiceSapImpl implements MaterialService
             ];
         }
 
+        $plantIdOutlet = Plant::getCodeById(Plant::getFirstPlantIdSelect($companyId, 'outlet'));
+        $plantIdDc = Plant::getCodeById(Plant::getFirstPlantIdSelect($companyId, 'dc'));
+
         $payload = [
             'company_id' => $sapCodeComp,
-            'plant_id' => []
+            'plant_id' => [$plantIdOutlet, $plantIdDc]
         ];
 
         $sapRepository = new SapRepositorySapImpl($companyId);
@@ -65,9 +69,12 @@ class MaterialServiceSapImpl implements MaterialService
 
         foreach ($materials as $m) {
 
-            $material_id = 0;
-
             $material_code = substr($m['material_id'], -7);
+            if ($m['uom_alternative_id']) {
+                $material_alternative = $m['uom_alternative_id'];
+            } else {
+                $material_alternative = $m['uom_id'];
+            }
 
             // what it material already exist in database
             $cMaterial = DB::table('materials')->where('code', $material_code)->count();
@@ -78,7 +85,7 @@ class MaterialServiceSapImpl implements MaterialService
                 $material->type = $m['material_type_id'];
                 $material->group = $m['material_group_id'];
                 $material->uom = $m['uom_id'];
-                $material->alternative_uom = $m['uom_alternative_id'];
+                $material->alternative_uom = $material_alternative;
                 $material->consolidation_flag = '';
                 if( $material->save() ){
                     $material_id = $material->id;
@@ -95,7 +102,7 @@ class MaterialServiceSapImpl implements MaterialService
                 $material->type = $m['material_type_id'];
                 $material->group = $m['material_group_id'];
                 $material->uom = $m['uom_id'];
-                $material->alternative_uom = $m['uom_alternative_id'];
+                $material->alternative_uom = $material_alternative;
                 $material->consolidation_flag = '';
                 if( $material->save() ){
                     $material_id = $material->id;

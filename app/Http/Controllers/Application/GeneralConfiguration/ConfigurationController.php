@@ -38,7 +38,9 @@ class ConfigurationController extends Controller
                         'configurations.option',
                         'configuration_groups.name as group_name',
                         'companies.name as company_name',
-                    ]);
+                    ])
+                    ->orderByDesc('configurations.company_id')
+                    ->orderBy('configurations.configuration_group_id');
 
         return Datatables::of($query)
                 ->addIndexColumn()
@@ -46,7 +48,7 @@ class ConfigurationController extends Controller
                     $sql = "configuration_groups.name like ?";
                     $query->whereRaw($sql, ["%{$keyword}%"]);
                 })
-                ->rawColumns(['option'])
+                ->rawColumns(['option', 'for', 'label', 'description'])
                 ->make();
     }
 

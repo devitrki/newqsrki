@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Financeacc\ReportFinanceaccController;
 use App\Http\Controllers\Inventory\ReportInventoryController;
 use App\Http\Controllers\Tax\ReportTaxController;
+use App\Http\Controllers\Pos\ReportPosController;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,9 +37,9 @@ Route::get('tax/{menu}/report', [ReportTaxController::class, 'report']);
 Route::post('tax/{menu}/export', [ReportTaxController::class, 'export']);
 
 // // module pos
-// Route::get('pos/{menu}', 'Pos\ReportPosController@index');
-// Route::get('pos/{menu}/report', 'Pos\ReportPosController@report');
-// Route::post('pos/{menu}/export', 'Pos\ReportPosController@export');
+Route::get('pos/{menu}', [ReportPosController::class, 'index']);
+Route::get('pos/{menu}/report', [ReportPosController::class, 'report']);
+Route::post('pos/{menu}/export', [ReportPosController::class, 'export']);
 
 // module financeacc
 Route::get('financeacc/{menu}', [ReportFinanceaccController::class, 'index']);

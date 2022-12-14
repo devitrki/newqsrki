@@ -72,6 +72,12 @@ class PlantServiceSapImpl implements PlantService
                     $plant->type = ($plant_type != 'Outlet') ? 2 : 1 ;
                     $plant->address = $p['address'] . ' ' . $p['city'];
                     $plant->status = 1;
+                    $plant->sloc_id_gr = ($plant_type != 'Outlet') ? 'DR01' : 'S001';
+                    $plant->sloc_id_gr_vendor = ($plant_type != 'Outlet') ? 'DR01' : 'S001';
+                    $plant->sloc_id_waste = ($plant_type != 'Outlet') ? 'DR01' : 'S001';
+                    $plant->sloc_id_asset_mutation = ($plant_type != 'Outlet') ? 'DR01' : 'S001';
+                    $plant->sloc_id_current_stock = ($plant_type != 'Outlet') ? 'DR01' : 'S001';
+                    $plant->sloc_id_opname = ($plant_type != 'Outlet') ? 'DR01' : 'S001';
                     $plant->sloc_id_gi_plant = ($plant_type != 'Outlet') ? 'DR01' : 'S001';
                     $plant->cost_center = $p['cost_center_id'];
                     $plant->cost_center_desc = $p['cost_center_name'];

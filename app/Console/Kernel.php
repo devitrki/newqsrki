@@ -7,6 +7,10 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
+// flag change pass
+use App\Jobs\ScheduleFlagChangeMonthlyPass;
+
+// tax
 use App\Jobs\Tax\ScheduleSendTaxFtp;
 
 // asset so
@@ -26,6 +30,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
+        $schedule->job(new ScheduleFlagChangeMonthlyPass)->monthly();
+
         $companies = DB::table('companies')
                         ->select('id')
                         ->get();

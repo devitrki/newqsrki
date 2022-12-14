@@ -31,7 +31,7 @@ class UsersSeeder extends Seeder
         // create company RKI
         $company_rki = new Company;
         $company_rki->name = "RKI Indonesia";
-        $company_rki->code = "rki";
+        $company_rki->code = "RKI";
         $company_rki->configurations = '{"SAP_CODE":"RKI","TIMEZONE":"Asia\/Jakarta","SAP_API_KEY":"556b4e4e5757736a51544d33526a4a6c5956413d","SAP_API_SECRET_KEY":"$2a$14$EJfDx1FmOs4x9nvO2M\/77ebBBhngayO1\/uC48JafVqtG\/CmplNaN6"}';
         $company_rki->save();
 

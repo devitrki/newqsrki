@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 use App\Entities\SapMiddleware;
 
@@ -256,39 +257,42 @@ class SapRepositorySapImpl implements SapRepository
 
         $fakeResponse = [
             [
-                'status' => 'E',
+                'status' => 'S',
                 'message' => 'PO Number 4570001128',
+                'success' => $success,
+                'document_number' => '100001',
+                'document_year' => '2022',
+                'stat1' => 'x',
+                'stat2' => 'x',
+                'stat3' => 'x',
                 'po_status' => [
-                    'success' => false,
+                    'success' => true,
                     'message' => 'Releases Error',
                     'document_number' => '100000001',
                     'document_year' => '',
                     'logs' => []
                 ],
                 'release_status' => [
-                    'success' => false,
+                    'success' => true,
                     'message' => 'Releases Error',
                     'document_number' => '100000002',
                     'document_year' => '',
                     'logs' => []
                 ],
                 'gi_status' => [
-                    'success' => false,
+                    'success' => true,
                     'message' => 'Releases Error',
                     'document_number' => '100000003',
                     'document_year' => '',
                     'logs' => []
                 ],
+                'logs' => [
+                    [
+                        'type' => 'E',
+                        'msg' => 'Something Wrong'
+                    ]
+                ],
             ],
-            'success' => $success,
-            'document_number' => '100001',
-            'document_year' => '2022',
-            'logs' => [
-                [
-                    'type' => 'E',
-                    'msg' => 'Something Wrong'
-                ]
-            ]
         ];
 
         return Http::response($fakeResponse, $statusCode);
@@ -548,6 +552,11 @@ class SapRepositorySapImpl implements SapRepository
         if ($res->ok()) {
             $status = true;
             $response = $res->json();
+        } else {
+            Log::error("Error call rf middleware", [
+                $res->status(),
+                $res->json()
+            ]);
         }
 
         return [
