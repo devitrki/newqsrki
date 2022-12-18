@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use OwenIt\Auditing\Contracts\Auditable;
 
+use App\Repositories\AlohaRepository;
+
 class Pos extends Model implements Auditable
 {
     use HasFactory, \OwenIt\Auditing\Auditable;
@@ -44,5 +46,22 @@ class Pos extends Model implements Auditable
         });
 
         return $configurations;
+    }
+
+    public static function getInstanceRepo($pos)
+    {
+        $instanceRepo = null;
+
+        switch ($pos->code) {
+            case 'aloha_rki':
+                $instanceRepo = new AlohaRepository($pos->id);
+                break;
+
+            default:
+                $instanceRepo = new AlohaRepository($pos->id);
+                break;
+        }
+
+        return $instanceRepo;
     }
 }

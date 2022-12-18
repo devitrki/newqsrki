@@ -54,72 +54,76 @@ class ReportPosController extends Controller
 
     public function report($menu, Request $request)
     {
+        $userAuth = $request->get('userAuth');
+
         switch ($menu) {
             case 'payment-detail-pos':
-                return $this->reportPaymentDetailPos($request->all());
+                return $this->reportPaymentDetailPos($userAuth->company_id_selected, $request->all());
                 break;
             case 'payment-pos':
-                return $this->reportPaymentPos($request->all());
+                return $this->reportPaymentPos($userAuth->company_id_selected, $request->all());
                 break;
             case 'promotion-type-pos':
-                return $this->reportPromotionTypePos($request->all());
+                return $this->reportPromotionTypePos($userAuth->company_id_selected, $request->all());
                 break;
             case 'sales-by-menu-pos':
-                return $this->reportSalesByMenuPos($request->all());
+                return $this->reportSalesByMenuPos($userAuth->company_id_selected, $request->all());
                 break;
             case 'sales-by-inventory-pos':
-                return $this->reportSalesByInventoryPos($request->all());
+                return $this->reportSalesByInventoryPos($userAuth->company_id_selected, $request->all());
                 break;
             case 'summary-payment-promotion-pos':
-                return $this->reportSummaryPaymentPromotionPos($request->all());
+                return $this->reportSummaryPaymentPromotionPos($userAuth->company_id_selected, $request->all());
                 break;
             case 'sales-menu-per-hour-pos':
-                return $this->reportSalesMenuPerHourPos($request->all());
+                return $this->reportSalesMenuPerHourPos($userAuth->company_id_selected, $request->all());
                 break;
             case 'sales-inventory-per-hour-pos':
-                return $this->reportSalesInventoryPerHourPos($request->all());
+                return $this->reportSalesInventoryPerHourPos($userAuth->company_id_selected, $request->all());
                 break;
             case 'void-pos':
-                return $this->reportVoidPos($request->all());
+                return $this->reportVoidPos($userAuth->company_id_selected, $request->all());
                 break;
             case 'sales-per-hour-pos':
-                return $this->reportSalesPerHourPos($request->all());
+                return $this->reportSalesPerHourPos($userAuth->company_id_selected, $request->all());
                 break;
         }
     }
 
     public function export($menu, Request $request)
     {
+        $userAuth = $request->get('userAuth');
+
         switch ($menu) {
             case 'payment-detail-pos':
-                return $this->exportPaymentDetailPos($request);
+                return $this->exportPaymentDetailPos($userAuth->company_id_selected, $request);
                 break;
             case 'payment-pos':
-                return $this->exportPaymentPos($request);
+                return $this->exportPaymentPos($userAuth->company_id_selected, $request);
                 break;
             case 'promotion-type-pos':
-                return $this->exportPromotionTypePos($request);
+                return $this->exportPromotionTypePos($userAuth->company_id_selected, $request);
                 break;
             case 'sales-by-menu-pos':
-                return $this->exportSalesByMenuPos($request);
+                return $this->exportSalesByMenuPos($userAuth->company_id_selected, $request);
                 break;
             case 'sales-by-inventory-pos':
-                return $this->exportSalesByInventoryPos($request);
+                return $this->exportSalesByInventoryPos($userAuth->company_id_selected, $request);
                 break;
             case 'summary-payment-promotion-pos':
-                return $this->exporttSummaryPaymentPromotionPos($request);
+                return $this->exporttSummaryPaymentPromotionPos($userAuth->company_id_selected, $request);
                 break;
             case 'sales-menu-per-hour-pos':
-                return $this->exporttSalesMenuPerHourPos($request);
+                return $this->exporttSalesMenuPerHourPos($userAuth->company_id_selected, $request);
                 break;
             case 'sales-inventory-per-hour-pos':
-                return $this->exporttSalesInventoryPerHourPos($request);
+                return $this->exporttSalesInventoryPerHourPos($userAuth->company_id_selected, $request);
                 break;
             case 'void-pos':
-                return $this->exportVoidPos($request);
+                return $this->exportVoidPos($userAuth->company_id_selected, $request);
                 break;
             case 'sales-per-hour-pos':
-                return $this->exportSalesPerHourPos($request);
+                return $this->exportSalesPerHourPos($userAuth->company_id_selected, $request);
                 break;
         }
     }
@@ -167,12 +171,7 @@ class ReportPosController extends Controller
 
     public function viewSummaryPaymentPromotionPos($request)
     {
-        $first_plant_id = Plant::getFirstPlantIdSelect(true, 'outlet');
-        $first_plant_name = Plant::getShortNameById($first_plant_id);
-
         $dataview = [
-            'first_plant_id' => $first_plant_id,
-            'first_plant_name' => $first_plant_name,
             'menu_id' => $request['menuid'],
         ];
         return view('reports.pos.summary-payment-promotion-pos-view', $dataview)->render();
@@ -180,12 +179,7 @@ class ReportPosController extends Controller
 
     public function viewSalesMenuPerHourPos($request)
     {
-        $first_plant_id = Plant::getFirstPlantIdSelect(true, 'outlet');
-        $first_plant_name = Plant::getShortNameById($first_plant_id);
-
         $dataview = [
-            'first_plant_id' => $first_plant_id,
-            'first_plant_name' => $first_plant_name,
             'menu_id' => $request['menuid'],
         ];
         return view('reports.pos.sales-menu-per-hour-pos-view', $dataview)->render();
@@ -193,12 +187,7 @@ class ReportPosController extends Controller
 
     public function viewSalesInventoryPerHourPos($request)
     {
-        $first_plant_id = Plant::getFirstPlantIdSelect(true, 'outlet');
-        $first_plant_name = Plant::getShortNameById($first_plant_id);
-
         $dataview = [
-            'first_plant_id' => $first_plant_id,
-            'first_plant_name' => $first_plant_name,
             'menu_id' => $request['menuid'],
         ];
         return view('reports.pos.sales-inventory-per-hour-pos-view', $dataview)->render();
@@ -206,12 +195,7 @@ class ReportPosController extends Controller
 
     public function viewVoidPos($request)
     {
-        $first_plant_id = Plant::getFirstPlantIdSelect(true, 'outlet');
-        $first_plant_name = Plant::getShortNameById($first_plant_id);
-
         $dataview = [
-            'first_plant_id' => $first_plant_id,
-            'first_plant_name' => $first_plant_name,
             'menu_id' => $request['menuid'],
         ];
         return view('reports.pos.void-pos-view', $dataview)->render();
@@ -219,91 +203,88 @@ class ReportPosController extends Controller
 
     public function viewSalesPerHourPos($request)
     {
-        $first_plant_id = Plant::getFirstPlantIdSelect(true, 'outlet');
-        $first_plant_name = Plant::getShortNameById($first_plant_id);
-
         $dataview = [
-            'first_plant_id' => $first_plant_id,
-            'first_plant_name' => $first_plant_name,
             'menu_id' => $request['menuid'],
         ];
         return view('reports.pos.sales-per-hour-pos-view', $dataview)->render();
     }
 
     // report
-    public function reportPaymentDetailPos($request)
+    public function reportPaymentDetailPos($companyId, $request)
     {
-        $dataview = AllPos::getDataPaymentDetailReport($request['date']);
+        $dataview = AllPos::getDataPaymentDetailReport($companyId, $request['date']);
         return view('reports.pos.payment-detail-pos-report', $dataview)->render();
     }
 
-    public function reportPaymentPos($request)
+    public function reportPaymentPos($companyId, $request)
     {
-        $dataview = AllPos::getDataPaymentReport($request['store'], $request['from-date'], $request['until-date']);
+        $dataview = AllPos::getDataPaymentReport($companyId, $request['store'], $request['from-date'], $request['until-date']);
         return view('reports.pos.payment-pos-report', $dataview)->render();
     }
 
-    public function reportPromotionTypePos($request)
+    public function reportPromotionTypePos($companyId, $request)
     {
-        $dataview = AllPos::getDataPromotionTypeReport($request['from-date'], $request['until-date']);
+        $dataview = AllPos::getDataPromotionTypeReport($companyId, $request['from-date'], $request['until-date']);
         return view('reports.pos.promotion-type-pos-report', $dataview)->render();
     }
 
-    public function reportSalesByMenuPos($request)
+    public function reportSalesByMenuPos($companyId, $request)
     {
-        $dataview = AllPos::getDataSalesByMenuReport($request['store'], $request['pos'], $request['from-date'], $request['until-date']);
+        $dataview = AllPos::getDataSalesByMenuReport($companyId, $request['store'], $request['pos'], $request['from-date'], $request['until-date']);
         return view('reports.pos.sales-by-menu-pos-report', $dataview)->render();
     }
 
-    public function reportSalesByInventoryPos($request)
+    public function reportSalesByInventoryPos($companyId, $request)
     {
-        $dataview = AllPos::getDataSalesByInventoryReport($request['store'], $request['pos'], $request['from-date'], $request['until-date']);
+        $dataview = AllPos::getDataSalesByInventoryReport($companyId, $request['store'], $request['pos'], $request['from-date'], $request['until-date']);
         return view('reports.pos.sales-by-inventory-pos-report', $dataview)->render();
     }
 
-    public function reportSummaryPaymentPromotionPos($request)
+    public function reportSummaryPaymentPromotionPos($companyId, $request)
     {
-        $dataview = AllPos::getDataSummaryPaymentPromotionReport($request['store'], $request['pos'], $request['date']);
+        $dataview = AllPos::getDataSummaryPaymentPromotionReport($companyId, $request['store'], $request['pos'], $request['date']);
         return view('reports.pos.summary-payment-promotion-pos-report', $dataview)->render();
     }
 
-    public function reportSalesMenuPerHourPos($request)
+    public function reportSalesMenuPerHourPos($companyId, $request)
     {
-        $dataview = AllPos::getDataSalesMenuPerHourReport($request['store'], $request['pos'], $request['from-date'], $request['until-date']);
+        $dataview = AllPos::getDataSalesMenuPerHourReport($companyId, $request['store'], $request['pos'], $request['from-date'], $request['until-date']);
         return view('reports.pos.sales-menu-per-hour-pos-report', $dataview)->render();
     }
 
-    public function reportSalesInventoryPerHourPos($request)
+    public function reportSalesInventoryPerHourPos($companyId, $request)
     {
-        $dataview = AllPos::getDataSalesInventoryPerHourReport($request['store'], $request['pos'], $request['from-date'], $request['until-date']);
+        $dataview = AllPos::getDataSalesInventoryPerHourReport($companyId, $request['store'], $request['pos'], $request['from-date'], $request['until-date']);
         return view('reports.pos.sales-inventory-per-hour-pos-report', $dataview)->render();
     }
 
-    public function reportVoidPos($request)
+    public function reportVoidPos($companyId, $request)
     {
-        $dataview = AllPos::getDataVoidReport($request['store'], $request['pos'], $request['from-date'], $request['until-date']);
+        $dataview = AllPos::getDataVoidReport($companyId, $request['store'], $request['pos'], $request['from-date'], $request['until-date']);
         return view('reports.pos.void-pos-report', $dataview)->render();
     }
 
-    public function reportSalesPerHourPos($request)
+    public function reportSalesPerHourPos($companyId, $request)
     {
-        $dataview = AllPos::getDataSalesPerHourReport($request['store'], $request['pos'], $request['from-date'], $request['until-date']);
+        $dataview = AllPos::getDataSalesPerHourReport($companyId, $request['store'], $request['pos'], $request['from-date'], $request['until-date']);
         return view('reports.pos.sales-per-hour-pos-report', $dataview)->render();
     }
 
     // export
-    public function exportPaymentDetailPos($request)
+    public function exportPaymentDetailPos($companyId, $request)
     {
         $request->validate([
             'date' => 'required',
         ]);
 
         $param = [
+            'company_id' => $companyId,
             'date' => $request->date
         ];
 
         // insert to downloads
         $download = new Download;
+        $download->company_id = $companyId;
         $download->name = 'Payment Detail POS';
         $download->module = 'POS';
         $download->type = 'payment-detail-pos';
@@ -332,7 +313,7 @@ class ReportPosController extends Controller
         return response()->json(Helper::resJSON($stat, $msg));
     }
 
-    public function exportPaymentPos($request)
+    public function exportPaymentPos($companyId, $request)
     {
         $request->validate([
             'store' => 'required',
@@ -341,6 +322,7 @@ class ReportPosController extends Controller
         ]);
 
         $param = [
+            'company_id' => $companyId,
             'store' => $request->store,
             'from_date' => $request->from_date,
             'until_date' => $request->until_date
@@ -348,6 +330,7 @@ class ReportPosController extends Controller
 
         // insert to downloads
         $download = new Download;
+        $download->company_id = $companyId;
         $download->name = 'Payment POS';
         $download->module = 'POS';
         $download->type = 'payment-pos';
@@ -376,7 +359,7 @@ class ReportPosController extends Controller
         return response()->json(Helper::resJSON($stat, $msg));
     }
 
-    public function exportPromotionTypePos($request)
+    public function exportPromotionTypePos($companyId, $request)
     {
         $request->validate([
             'from_date' => 'required',
@@ -384,12 +367,14 @@ class ReportPosController extends Controller
         ]);
 
         $param = [
+            'company_id' => $companyId,
             'from_date' => $request->from_date,
             'until_date' => $request->until_date
         ];
 
         // insert to downloads
         $download = new Download;
+        $download->company_id = $companyId;
         $download->name = 'Promotion Type POS';
         $download->module = 'POS';
         $download->type = 'promotion-type-pos';
@@ -418,7 +403,7 @@ class ReportPosController extends Controller
         return response()->json(Helper::resJSON($stat, $msg));
     }
 
-    public function exportSalesByMenuPos($request)
+    public function exportSalesByMenuPos($companyId, $request)
     {
         $request->validate([
             'store' => 'required',
@@ -428,6 +413,7 @@ class ReportPosController extends Controller
         ]);
 
         $param = [
+            'company_id' => $companyId,
             'store' => $request->store,
             'pos' => $request->pos,
             'from_date' => $request->from_date,
@@ -436,6 +422,7 @@ class ReportPosController extends Controller
 
         // insert to downloads
         $download = new Download;
+        $download->company_id = $companyId;
         $download->name = 'Sales by Menu Pos';
         $download->module = 'POS';
         $download->type = 'sales-by-menu-pos';
@@ -464,7 +451,7 @@ class ReportPosController extends Controller
         return response()->json(Helper::resJSON($stat, $msg));
     }
 
-    public function exportSalesByInventoryPos($request)
+    public function exportSalesByInventoryPos($companyId, $request)
     {
         $request->validate([
             'store' => 'required',
@@ -474,6 +461,7 @@ class ReportPosController extends Controller
         ]);
 
         $param = [
+            'company_id' => $companyId,
             'store' => $request->store,
             'pos' => $request->pos,
             'from_date' => $request->from_date,
@@ -482,6 +470,7 @@ class ReportPosController extends Controller
 
         // insert to downloads
         $download = new Download;
+        $download->company_id = $companyId;
         $download->name = 'Sales by Inventory Pos';
         $download->module = 'POS';
         $download->type = 'sales-by-inventory-pos';
@@ -510,7 +499,7 @@ class ReportPosController extends Controller
         return response()->json(Helper::resJSON($stat, $msg));
     }
 
-    public function exporttSummaryPaymentPromotionPos($request)
+    public function exporttSummaryPaymentPromotionPos($companyId, $request)
     {
         $request->validate([
             'store' => 'required',
@@ -519,6 +508,7 @@ class ReportPosController extends Controller
         ]);
 
         $param = [
+            'company_id' => $companyId,
             'store' => $request->store,
             'pos' => $request->pos,
             'date' => $request->date
@@ -526,6 +516,7 @@ class ReportPosController extends Controller
 
         // insert to downloads
         $download = new Download;
+        $download->company_id = $companyId;
         $download->name = 'Summary Payment and Promotion Pos';
         $download->module = 'POS';
         $download->type = 'summary-payment-promotion-pos';
@@ -554,7 +545,7 @@ class ReportPosController extends Controller
         return response()->json(Helper::resJSON($stat, $msg));
     }
 
-    public function exporttSalesMenuPerHourPos($request)
+    public function exporttSalesMenuPerHourPos($companyId, $request)
     {
         $request->validate([
             'store' => 'required',
@@ -564,6 +555,7 @@ class ReportPosController extends Controller
         ]);
 
         $param = [
+            'company_id' => $companyId,
             'store' => $request->store,
             'pos' => $request->pos,
             'from_date' => $request->from_date,
@@ -572,6 +564,7 @@ class ReportPosController extends Controller
 
         // insert to downloads
         $download = new Download;
+        $download->company_id = $companyId;
         $download->name = 'Sales by Menu Per Hour Pos';
         $download->module = 'POS';
         $download->type = 'sales-menu-per-hour-pos';
@@ -600,7 +593,7 @@ class ReportPosController extends Controller
         return response()->json(Helper::resJSON($stat, $msg));
     }
 
-    public function exporttSalesInventoryPerHourPos($request)
+    public function exporttSalesInventoryPerHourPos($companyId, $request)
     {
         $request->validate([
             'store' => 'required',
@@ -610,6 +603,7 @@ class ReportPosController extends Controller
         ]);
 
         $param = [
+            'company_id' => $companyId,
             'store' => $request->store,
             'pos' => $request->pos,
             'from_date' => $request->from_date,
@@ -618,6 +612,7 @@ class ReportPosController extends Controller
 
         // insert to downloads
         $download = new Download;
+        $download->company_id = $companyId;
         $download->name = 'Sales by Inventory Per Hour Pos';
         $download->module = 'POS';
         $download->type = 'sales-inventory-per-hour-pos';
@@ -646,7 +641,7 @@ class ReportPosController extends Controller
         return response()->json(Helper::resJSON($stat, $msg));
     }
 
-    public function exportVoidPos($request)
+    public function exportVoidPos($companyId, $request)
     {
         $request->validate([
             'store' => 'required',
@@ -656,6 +651,7 @@ class ReportPosController extends Controller
         ]);
 
         $param = [
+            'company_id' => $companyId,
             'store' => $request->store,
             'pos' => $request->pos,
             'from_date' => $request->from_date,
@@ -664,6 +660,7 @@ class ReportPosController extends Controller
 
         // insert to downloads
         $download = new Download;
+        $download->company_id = $companyId;
         $download->name = 'Void (Refund) Pos';
         $download->module = 'POS';
         $download->type = 'void-pos';
@@ -692,7 +689,7 @@ class ReportPosController extends Controller
         return response()->json(Helper::resJSON($stat, $msg));
     }
 
-    public function exportSalesPerHourPos($request)
+    public function exportSalesPerHourPos($companyId, $request)
     {
         $request->validate([
             'store' => 'required',
@@ -702,6 +699,7 @@ class ReportPosController extends Controller
         ]);
 
         $param = [
+            'company_id' => $companyId,
             'store' => $request->store,
             'pos' => $request->pos,
             'from_date' => $request->from_date,
@@ -710,6 +708,7 @@ class ReportPosController extends Controller
 
         // insert to downloads
         $download = new Download;
+        $download->company_id = $companyId;
         $download->name = 'Sales Per Hour Pos';
         $download->module = 'POS';
         $download->type = 'sales-per-hour-pos';

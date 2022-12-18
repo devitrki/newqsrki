@@ -159,19 +159,36 @@ class AssetServiceSapImpl implements AssetService
         $alreadyInTo = false; // flag for asset receive to plant receive
         $goneInFrom = true; // flag for asset gone from plant sender
 
-        $fromPlantCode = Plant::getCodeById($from_plant_id);
-        $toPlantCode = Plant::getCodeById($to_plant_id);
-
-        $response = $this->syncAsset($to_plant_id);
-
-        if ($response['status']) {
-            $assetSapTos = $response['data'];
-
-            $inserts = [];
-
-            $plantTo = DB::table('plants')
+        $plantTo = DB::table('plants')
                         ->where('id', $to_plant_id)
                         ->first();
+
+        $plantFrom = DB::table('plants')
+                        ->where('id', $from_plant_id)
+                        ->first();
+
+        $fromPlantCode = $plantFrom->code;
+        $toPlantCode = $plantTo->code;
+
+        $sapCodeComp = Company::getConfigByKey($plantTo->company_id, 'SAP_CODE');
+        if (!$sapCodeComp || $sapCodeComp == '') {
+            Log::error('Check Change SAP Asset :' . $number_asset . '-' . $sub_number_asset .
+                ' from ' . $from_plant_id . ' to ' . $to_plant_id . ' Error : sap code not setting');
+        }
+
+
+        $param = [
+            'company_id' => $sapCodeComp,
+            'plant_id' => [$plantTo->code],
+        ];
+
+        $sapRepository = new SapRepositorySapImpl($plantTo->company_id);
+        $sapResponse = $sapRepository->syncAsset($param);
+
+        if ($sapResponse['status']) {
+            $assetSapTos = $sapResponse['response'];
+
+            $inserts = [];
 
             // delete asset exist plant to
             DB::table('assets')->where('plant_id', $to_plant_id)->delete();
@@ -180,7 +197,7 @@ class AssetServiceSapImpl implements AssetService
             foreach ($assetSapTos as $assetSapTo) {
 
                 // check asset have already in plant receive
-                if ($number_asset == $assetSapTo['asset_number'] && $sub_number_asset == $assetSapTo['sub_number'] && $to_cost_center_code == $assetSapTo['cc_code'] &&  $toPlantCode == $assetSapTo['plant']) {
+                if ($number_asset == $assetSapTo['asset_id'] && $sub_number_asset == $assetSapTo['asset_sub_id'] && $to_cost_center_code == $assetSapTo['cost_center_id'] &&  $toPlantCode == $assetSapTo['plant_id']) {
                     $alreadyInTo = true;
                 }
 
@@ -194,7 +211,7 @@ class AssetServiceSapImpl implements AssetService
                     'spec_user' => $assetSapTo['user_spec'],
                     'qty_web' => round($assetSapTo['qty']),
                     'uom' => $assetSapTo['uom_id'],
-                    'cost_center' => $assetSapTo['cost_center_desc'],
+                    'cost_center' => $assetSapTo['cost_center_name'],
                     'cost_center_code' => $assetSapTo['cost_center_id'],
                     'remark' => $assetSapTo['remark'],
                     "created_at" =>  \Carbon\Carbon::now(), # new \Datetime()
@@ -215,16 +232,17 @@ class AssetServiceSapImpl implements AssetService
             }
 
             if ($success) {
-                $response = $this->syncAsset($from_plant_id);
+                $param = [
+                    'company_id' => $sapCodeComp,
+                    'plant_id' => [$plantFrom->code],
+                ];
 
-                if ($response['status']) {
-                    $assetSapFroms = $response['data'];
+                $sapResponse = $sapRepository->syncAsset($param);
+
+                if ($sapResponse['status']) {
+                    $assetSapFroms = $sapResponse['response'];
 
                     $inserts = [];
-
-                    $plantFrom = DB::table('plants')
-                                ->where('id', $from_plant_id)
-                                ->first();
 
                     // delete asset exist plant from / plant sender
                     DB::table('assets')->where('plant_id', $from_plant_id)->delete();
@@ -233,7 +251,7 @@ class AssetServiceSapImpl implements AssetService
                     foreach ($assetSapFroms as $assetSapFrom) {
 
                         // check asset already gone from plant from / plant sender or not
-                        if ($number_asset == $assetSapFrom['asset_number'] && $sub_number_asset == $assetSapFrom['sub_number'] && $from_cost_center_code == $assetSapFrom['cc_code'] && $fromPlantCode == $assetSapFrom['plant']) {
+                        if ($number_asset == $assetSapFrom['asset_id'] && $sub_number_asset == $assetSapFrom['asset_sub_id'] && $from_cost_center_code == $assetSapFrom['cost_center_id'] && $fromPlantCode == $assetSapFrom['plant_id']) {
                             $goneInFrom = false;
                         }
 
@@ -247,7 +265,7 @@ class AssetServiceSapImpl implements AssetService
                             'spec_user' => $assetSapFrom['user_spec'],
                             'qty_web' => round($assetSapFrom['qty']),
                             'uom' => $assetSapFrom['uom_id'],
-                            'cost_center' => $assetSapFrom['cost_center_desc'],
+                            'cost_center' => $assetSapFrom['cost_center_name'],
                             'cost_center_code' => $assetSapFrom['cost_center_id'],
                             'remark' => $assetSapFrom['remark'],
                             "created_at" =>  \Carbon\Carbon::now(), # new \Datetime()

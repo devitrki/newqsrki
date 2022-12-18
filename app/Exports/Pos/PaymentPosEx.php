@@ -6,17 +6,20 @@ use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Lang;
 
 use App\Models\Pos\AllPos;
 
-class PaymentPos implements FromView, ShouldAutoSize, WithTitle
+class PaymentPosEx implements FromView, ShouldAutoSize, WithTitle
 {
+    protected $companyId;
     protected $store;
     protected $dateFrom;
     protected $dateUntil;
 
-    function __construct($store, $dateFrom, $dateUntil)
+    function __construct($companyId, $store, $dateFrom, $dateUntil)
     {
+        $this->companyId = $companyId;
         $this->store = $store;
         $this->dateFrom = $dateFrom;
         $this->dateUntil = $dateUntil;
@@ -25,8 +28,8 @@ class PaymentPos implements FromView, ShouldAutoSize, WithTitle
     public function view(): View
     {
         $report_data = [
-            'title' => \Lang::get('Payment POS Report'),
-            'data' => AllPos::getDataPaymentReport($this->store, $this->dateFrom, $this->dateUntil)
+            'title' => Lang::get('Payment POS Report'),
+            'data' => AllPos::getDataPaymentReport($this->companyId, $this->store, $this->dateFrom, $this->dateUntil)
         ];
 
         return view('pos.excel.payment-pos-excel', $report_data);

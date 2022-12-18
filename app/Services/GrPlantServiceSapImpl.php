@@ -93,8 +93,9 @@ class GrPlantServiceSapImpl implements GrPlantService
 
         $payload = [
             'company_id' => $sapCodeComp,
-            'plant_id' => $plant->code,
-            'document_numbers' => [$documentNumber]
+            'plant_id' => '',
+            'document_number' => $documentNumber,
+            'document_year' => Date('Y')
         ];
 
         $sapRepository = new SapRepositorySapImpl($plant->company_id);
@@ -127,7 +128,7 @@ class GrPlantServiceSapImpl implements GrPlantService
                     'qty_gr' => 0,
                     'uom' => $v['uom_id'],
                     'material_id' => $material_id,
-                    'item_number' => $v['po_item'],
+                    'item_number' => $v['item_number'],
                 ];
             }
         }
@@ -154,7 +155,7 @@ class GrPlantServiceSapImpl implements GrPlantService
 
         $dataUpload = [
             'company_id' => $sapCodeComp,
-            'plant_id' => $request->plant_to,
+            'plant_id' => $request->plant_to, // receive plant
             'po_number' => $request->po_number,
             'document_date' => Helper::DateConvertFormat($request->receive_date, 'Y/m/d', 'Y-m-d'),
             'posting_date' => Helper::DateConvertFormat($request->receive_date, 'Y/m/d', 'Y-m-d'),

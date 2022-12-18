@@ -62,6 +62,10 @@ class PosController extends Controller
                 if (!is_array($data)) {
                     $data->prepend(['id' => 0, 'text' => Lang::get('All')]);
                 }
+            } else if ($request->query('ext') == 'default') {
+                if (!is_array($data)) {
+                    $data->prepend(['id' => 0, 'text' => Lang::get('Default')]);
+                }
             }
         }
 

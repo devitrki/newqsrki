@@ -120,15 +120,15 @@ class PlantController extends Controller
                 }
             });
 
-            // if ($request->has('pos')) {
-            //     if ($request->query('pos') == 'aloha') {
-            //         $query = $query->where('pos', 1);
-            //     } else if ($request->query('pos') == 'vtec') {
-            //         $query = $query->where('pos', 2);
-            //     } else if ($request->query('pos') == 'quorion') {
-            //         $query = $query->where('pos', 3);
-            //     }
-            // }
+            if ($request->has('pos')) {
+                $query = $query->where('pos_id', $request->query('pos'));
+            }
+
+            if ($request->has('have_pos')) {
+                if ($request->has('have_pos') == 'true') {
+                    $query = $query->whereNotNull('pos_id');
+                }
+            }
 
         });
 

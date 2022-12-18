@@ -121,8 +121,8 @@ class NotificationPettycash extends Mailable
     {
         return new Envelope(
             subject: $this->subjectMail,
-            // to: 'yudhapermana.dev@gmail.com',
-            to: $this->toMail
+            to: 'yudhapermana.dev@gmail.com',
+            // to: $this->toMail
         );
     }
 

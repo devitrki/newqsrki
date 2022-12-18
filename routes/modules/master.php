@@ -19,6 +19,7 @@ use App\Http\Controllers\Master\BankChargeGLController;
 use App\Http\Controllers\Master\PosController;
 use App\Http\Controllers\Master\PettycashGlCcController;
 use App\Http\Controllers\Master\OpnameMaterialFormulaController;
+use App\Http\Controllers\Master\PaymentPosController;
 use App\Http\Controllers\Auth\LanguageController;
 
 /*
@@ -128,5 +129,8 @@ Route::get('opname-material-formula/{opname_material_formula_id}/item/dtble', [O
 Route::post('opname-material-formula/{opname_material_formula_id}/item', [OpnameMaterialFormulaController::class, 'storeItem']);
 Route::put('opname-material-formula/{opname_material_formula_id}/item', [OpnameMaterialFormulaController::class, 'updateItem']);
 Route::delete('opname-material-formula/{opname_material_formula_id}/item/delete/{id}', [OpnameMaterialFormulaController::class, 'destroyItem']);
+
+Route::resource('payment-pos', PaymentPosController::class)->except(['show']);
+Route::get('payment-pos/dtble', [PaymentPosController::class, 'dtble']);
 
 Route::resource('master-configuration', ConfigurationController::class)->except(['show']);

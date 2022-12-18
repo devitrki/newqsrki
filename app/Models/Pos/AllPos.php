@@ -5,14 +5,15 @@ namespace App\Models\Pos;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Lang;
 use Maatwebsite\Excel\Facades\Excel;
-use PDF;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 use Carbon\Carbon;
 use App\Library\Helper;
 
 use App\Exports\Pos\PaymentDetailPos;
-use App\Exports\Pos\PaymentPos;
+use App\Exports\Pos\PaymentPosEx;
 use App\Exports\Pos\PromotionTypePos;
 use App\Exports\Pos\SalesByMenuPos;
 use App\Exports\Pos\SalesByInventoryPos;
@@ -22,42 +23,50 @@ use App\Exports\Pos\SalesInventoryPerHourPos;
 use App\Exports\Pos\VoidPos;
 use App\Exports\Pos\SalesPerHourPos;
 
+use App\Models\Pos;
 use App\Models\Plant;
+use App\Models\PaymentPos;
+use App\Models\Material;
+use App\Models\Pos\Aloha;
+use App\Models\Pos\Quorion;
+use App\Models\Pos\AlohaInterface;
 use App\Models\Interfaces\VtecOrderDetail;
 use App\Models\Interfaces\VtecOrderPayDetail;
 use App\Models\Interfaces\VtecSortPayment;
 use App\Models\Interfaces\VtecOrderTransaction;
 use App\Models\Interfaces\VtecOrderPromotion;
-use App\Models\Pos\Aloha;
-use App\Models\Pos\Quorion;
-use App\Models\Pos\AlohaInterface;
 
 class AllPos extends Model
 {
 
-    public static function getDataPaymentDetailReport($date)
+    public static function getDataPaymentDetailReport($companyId, $date)
     {
-        $listStores = Plant::getListStore();
+        $listStores = Plant::getListStore($companyId);
 
         $header = [];
         $items = [];
         $flag = true;
 
         foreach ($listStores as $storeID) {
-            $pos = Plant::getPosById($storeID);
-            if ( !in_array($pos, [1,2,3]) ) {
-                continue;
-            }
+            $pos_id = Plant::getPosById($storeID);
+            $pos = Pos::find($pos_id);
 
             $dataDatePayment = [
                 "date" => Helper::DateConvertFormat($date, 'Y/m/d', 'd.m.Y'),
                 "store_code" => Plant::getCustomerCodeById($storeID),
                 "store_name" => Plant::getShortNameById($storeID),
-                "pos" => Plant::getPosNameById($storeID),
+                "pos" => $pos->name,
             ];
 
-            $listPayments = VtecSortPayment::getListPayments();
+            $listPayments = PaymentPos::getListPayments();
             $totalPayment = 0;
+
+            $posRepository = Pos::getInstanceRepo($pos);
+            $initConnectionAloha = $posRepository->initConnectionDB();
+            if (!$initConnectionAloha['status']) {
+                continue;
+            }
+
             foreach ($listPayments as $listPayment) {
 
                 if ($flag) {
@@ -67,40 +76,15 @@ class AllPos extends Model
                 $payAmount = 0;
                 $payQty = 0;
 
-                // 1 = aloha, 2 = vtec, 3 = quorion
-                switch ($pos) {
-                    case 1:
-                        $payAmount = Aloha::getTotalPaymentByMethodPayment($storeID, $date, $listPayment->method_payment_name);
-                        $payQty = Aloha::getTotalQtyByMethodPayment($storeID, $date, $listPayment->method_payment_name);
-                        break;
-                    case 2:
-                        $payAmount = VtecOrderPayDetail::getTotalPaymentByMethodPayment($storeID, $date, $listPayment->method_payment_name);
-                        $payQty = VtecOrderPayDetail::getTotalQtyByMethodPayment($storeID, $date, $listPayment->method_payment_name);
-                        break;
-                    case 3:
-                        $payAmount = Quorion::getTotalPaymentByMethodPayment($storeID, $date, $listPayment->method_payment_name);
-                        $payQty = Quorion::getTotalQtyByMethodPayment($storeID, $date, $listPayment->method_payment_name);
-                        break;
-                }
+                $payAmount = $posRepository->getTotalPaymentByMethodPayment($storeID, $date, $listPayment->method_payment_name);
+                $payQty = $posRepository->getTotalQtyByMethodPayment($storeID, $date, $listPayment->method_payment_name);
 
                 $dataDatePayment[$listPayment->title] = $payAmount;
                 $dataDatePayment['qty' . $listPayment->title] = $payQty;
                 $totalPayment += $payAmount;
             }
 
-            $totalSales = 0;
-            // 1 = aloha, 2 = vtec, 3 = quorion
-            switch ($pos) {
-                case 1:
-                    $totalSales = Aloha::getTotalSales($storeID, $date);
-                    break;
-                case 2:
-                    $totalSales = VtecOrderTransaction::getTotalSales($storeID, $date);
-                    break;
-                case 3:
-                    $totalSales = Quorion::getTotalSales($storeID, $date);
-                    break;
-            }
+            $totalSales = $posRepository->getTotalSales($storeID, $date);
 
             $selisih = $totalPayment - $totalSales;
             $dataDatePayment['total_payment'] = $totalPayment;
@@ -137,7 +121,7 @@ class AllPos extends Model
         $random = strtolower(Helper::generateRandomStr(8));
         $typefile = '.xlsx';
         $report = [];
-        if (Excel::store(new PaymentDetailPos($param->date), $path . $filename . $random . $typefile, 'public')) {
+        if (Excel::store(new PaymentDetailPos($param->company_id, $param->date), $path . $filename . $random . $typefile, 'public')) {
             $report = [
                 'path' => $path,
                 'filename' => $filename . $random . $typefile
@@ -147,31 +131,45 @@ class AllPos extends Model
     }
 
     // payment pos
-    public static function getDataPaymentReport($storeID, $dateFrom, $dateUntil)
+    public static function getDataPaymentReport($companyId, $storeID, $dateFrom, $dateUntil)
     {
         $dtFrom = Carbon::createFromFormat('Y/m/d', $dateFrom);
         $dtUntil = Carbon::createFromFormat('Y/m/d', $dateUntil);
         $diffDay = $dtFrom->diffInDays($dtUntil);
 
-        $listPayments = VtecSortPayment::getListPayments();
+        $listPayments = PaymentPos::getListPayments();
         $flag = true;
-        $pos = Plant::getPosById($storeID);
         $storeCode = Plant::getCustomerCodeById($storeID);
         $storeName = Plant::getShortNameById($storeID);
 
-        $header = [];
-        $items = [];
+        $pos_id = Plant::getPosById($storeID);
 
-        if (!in_array($pos, [1, 2, 3])) {
+        if ($pos_id == '') {
             return [
-                'headers' => $header,
-                'items' => $items,
+                'headers' => [],
+                'items' => [],
                 'status' => false,
                 'message' => "Store " . $storeName . " Not Yet Mapping POS"
             ];
         }
 
+        $pos = Pos::find($pos_id);
+
+        $header = [];
+        $items = [];
+
         $date = Carbon::createFromFormat('Y/m/d', $dateFrom);
+
+        $posRepository = Pos::getInstanceRepo($pos);
+        $initConnectionAloha = $posRepository->initConnectionDB();
+        if (!$initConnectionAloha['status']) {
+            return [
+                'headers' => [],
+                'items' => [],
+                'status' => false,
+                'message' => "Store " . $storeName . " Not Yet Mapping POS Configuration"
+            ];
+        }
 
         for ($i = 0; $i <= $diffDay; $i++) {
 
@@ -179,7 +177,7 @@ class AllPos extends Model
                 "date" => $date->format('d.m.Y'),
                 "store_code" => $storeCode,
                 "store_name" => $storeName,
-                "pos" => Plant::getPosNameById($storeID),
+                "pos" => $pos->name
             ];
 
             $totalPayment = 0;
@@ -190,23 +188,8 @@ class AllPos extends Model
                     $header[] = $listPayment->title;
                 }
 
-                $payAmount = 0;
-
-                // 1 = aloha, 2 = vtec, 3 = quorion
-                switch ($pos) {
-                    case 1:
-                        $payAmount = Aloha::getTotalPaymentByMethodPayment($storeID, $date->format('Y-m-d'), $listPayment->method_payment_name);
-                        $payQty = Aloha::getTotalQtyByMethodPayment($storeID, $date->format('Y-m-d'), $listPayment->method_payment_name);
-                        break;
-                    case 2:
-                        $payAmount = VtecOrderPayDetail::getTotalPaymentByMethodPayment($storeID, $date->format('Y-m-d'), $listPayment->method_payment_name);
-                        $payQty = VtecOrderPayDetail::getTotalQtyByMethodPayment($storeID, $date->format('Y-m-d'), $listPayment->method_payment_name);
-                        break;
-                    case 3:
-                        $payAmount = Quorion::getTotalPaymentByMethodPayment($storeID, $date->format('Y-m-d'), $listPayment->method_payment_name);
-                        $payQty = Quorion::getTotalQtyByMethodPayment($storeID, $date->format('Y-m-d'), $listPayment->method_payment_name);
-                        break;
-                }
+                $payAmount = $posRepository->getTotalPaymentByMethodPayment($storeID, $date->format('Y-m-d'), $listPayment->method_payment_name);
+                $payQty = $posRepository->getTotalQtyByMethodPayment($storeID, $date->format('Y-m-d'), $listPayment->method_payment_name);
 
                 $dataDatePayment[$listPayment->title] = $payAmount;
                 $dataDatePayment['qty' . $listPayment->title] = $payQty;
@@ -245,7 +228,7 @@ class AllPos extends Model
         $random = strtolower(Helper::generateRandomStr(8));
         $typefile = '.xlsx';
         $report = [];
-        if (Excel::store(new PaymentPos($param->store, $param->from_date, $param->until_date), $path . $filename . $random . $typefile, 'public')) {
+        if (Excel::store(new PaymentPosEx($param->company_id, $param->store, $param->from_date, $param->until_date), $path . $filename . $random . $typefile, 'public')) {
             $report = [
                 'path' => $path,
                 'filename' => $filename . $random . $typefile
@@ -255,7 +238,7 @@ class AllPos extends Model
     }
 
     // promotion type
-    public static function getDataPromotionTypeReport($dateFrom, $dateUntil)
+    public static function getDataPromotionTypeReport($companyId, $dateFrom, $dateUntil)
     {
         $dtFrom = Carbon::createFromFormat('Y/m/d', $dateFrom);
         $dtUntil = Carbon::createFromFormat('Y/m/d', $dateUntil);
@@ -268,14 +251,16 @@ class AllPos extends Model
         $items = [];
 
 
-        $listStores = Plant::getListStore();
+        $listStores = Plant::getListStore($companyId);
 
         foreach ($listStores as $storeID) {
-            $pos = Plant::getPosById($storeID);
-            // filtered just pos vtec
-            if (!in_array($pos, [2])) {
+            $pos_id = Plant::getPosById($storeID);
+
+            if ($pos_id == '') {
                 continue;
             }
+
+            $pos = Pos::find($pos_id);
 
             $qLisPromotions = DB::table('vtec_order_promotions as op')
                                 ->join('vtec_order_details as od', function ($join) {
@@ -347,32 +332,71 @@ class AllPos extends Model
     }
 
     // sales by menu
-    public static function getDataSalesByMenuReport($storeID, $pos, $dateFrom, $dateUntil, $source = 'view'){
+    public static function getDataSalesByMenuReport($companyId, $storeID, $pos, $dateFrom, $dateUntil, $source = 'view'){
 
         if($source == 'view'){
             $diffDay = Helper::DateDifference(Helper::DateConvertFormat($dateFrom, 'Y/m/d', 'Y-m-d'), Helper::DateConvertFormat($dateUntil, 'Y/m/d', 'Y-m-d'));
             if($diffDay > 7){
                 return [
                     'status' => false,
-                    'message' => \Lang::get("Date range should not be more than 7 days")
+                    'message' => Lang::get("Date range should not be more than 7 days")
                 ];
             }
         }
 
-        $storePos = ($pos == 0) ? Plant::getPosById($storeID) : $pos;
+        $storeName = Plant::getShortNameById($storeID);
 
-        if( $storePos == 1 ){
-            // 1 = aloha
-            return AlohaInterface::getDataSalesByMenuReport($storeID, $dateFrom, $dateUntil);
-        } else if ( $storePos == 2 ) {
-            // 2 = vtec
-            return  VtecOrderDetail::getDataReport($storeID, $dateFrom, $dateUntil, $source);
+        if ($pos == 0) {
+            $pos_id = Plant::getPosById($storeID);
+            if ($pos_id == '') {
+                return [
+                    'status' => false,
+                    'message' => "Store " . $storeName . " Not Yet Mapping POS"
+                ];
+            }
         } else {
+            $pos_id = $pos;
+        }
+
+        $pos = Pos::find($pos_id);
+
+        $posRepository = Pos::getInstanceRepo($pos);
+        $initConnectionAloha = $posRepository->initConnectionDB();
+        if (!$initConnectionAloha['status']) {
             return [
                 'status' => false,
-                'message' => \Lang::get("POS Outlet Not Yet Mapping")
+                'message' => "Store " . $storeName . " Not Yet Mapping POS Configuration"
             ];
         }
+
+        $header = [
+            'store' => $storeName,
+            'date_from' => Helper::DateConvertFormat($dateFrom, 'Y/m/d', 'd/m/Y'),
+            'date_until' => Helper::DateConvertFormat($dateUntil, 'Y/m/d', 'd/m/Y'),
+        ];
+
+        $items = [];
+
+        $salesByMenus = $posRepository->getDataSalesByMenu($storeID, $dateFrom, $dateUntil);
+
+        foreach ($salesByMenus as $salesByMenu) {
+            $items[] = (object)[
+                'ProductName' => Material::getDescByCode($salesByMenu->BohName),
+                'ProductCode' => $salesByMenu->BohName,
+                'SaleModeName' => $salesByMenu->SalesMode,
+                'ItemType' => $salesByMenu->ItemType,
+                'TotalQty' => $salesByMenu->Quantity,
+                'NetSales' => $salesByMenu->GrossSales
+            ];
+        }
+
+        return [
+            'status' => true,
+            'count' => sizeof($items),
+            'header' => $header,
+            'items' => $items,
+            'message' => ''
+        ];
     }
 
     public static function GenerateSalesByMenuReport($type, $param)
@@ -391,8 +415,8 @@ class AllPos extends Model
     public static function GenerateSalesByMenuReportPdf($param)
     {
         $report_data = [
-            'title' => \Lang::get('Sales by Menu Pos'),
-            'data' => AllPos::getDataSalesByMenuReport($param->store, $param->pos, $param->from_date, $param->until_date, 'download')
+            'title' => Lang::get('Sales by Menu Pos'),
+            'data' => AllPos::getDataSalesByMenuReport($param->company_id, $param->store, $param->pos, $param->from_date, $param->until_date, 'download')
         ];
 
         $path = 'reports/pos/sales-by-menu-pos/pdf/';
@@ -417,7 +441,7 @@ class AllPos extends Model
         $random = strtolower(Helper::generateRandomStr(8));
         $typefile = '.xlsx';
         $report = [];
-        if (Excel::store(new SalesByMenuPos($param->store, $param->pos, $param->from_date, $param->until_date), $path . $filename . $random . $typefile, 'public')) {
+        if (Excel::store(new SalesByMenuPos($param->company_id, $param->store, $param->pos, $param->from_date, $param->until_date), $path . $filename . $random . $typefile, 'public')) {
             $report = [
                 'path' => $path,
                 'filename' => $filename . $random . $typefile
@@ -428,32 +452,84 @@ class AllPos extends Model
 
     // sales by inventory
 
-    public static function getDataSalesByInventoryReport($storeID, $pos, $dateFrom, $dateUntil, $source = 'view')
+    public static function getDataSalesByInventoryReport($companyId, $storeID, $pos, $dateFrom, $dateUntil, $source = 'view')
     {
         if($source == 'view'){
             $diffDay = Helper::DateDifference(Helper::DateConvertFormat($dateFrom, 'Y/m/d', 'Y-m-d'), Helper::DateConvertFormat($dateUntil, 'Y/m/d', 'Y-m-d'));
             if($diffDay > 7){
                 return [
                     'status' => false,
-                    'message' => \Lang::get("Date range should not be more than 7 days")
+                    'message' => Lang::get("Date range should not be more than 7 days")
                 ];
             }
         }
 
-        $storePos = ($pos == 0) ? Plant::getPosById($storeID) : $pos;
+        $storeName = Plant::getShortNameById($storeID);
 
-        if( $storePos == 1 ){
-            // 1 = aloha
-            return AlohaInterface::getDataSalesByInventoryReport($storeID, $dateFrom, $dateUntil);
-        } else if ( $storePos == 2 ) {
-            // 2 = vtec
-            return VtecOrderDetail::getDataReportInventory($storeID, $dateFrom, $dateUntil, $source);
+        if ($pos == 0) {
+            $pos_id = Plant::getPosById($storeID);
+            if ($pos_id == '') {
+                return [
+                    'status' => false,
+                    'message' => "Store " . $storeName . " Not Yet Mapping POS"
+                ];
+            }
         } else {
+            $pos_id = $pos;
+        }
+
+        $pos = Pos::find($pos_id);
+
+        $posRepository = Pos::getInstanceRepo($pos);
+        $initConnectionAloha = $posRepository->initConnectionDB();
+        if (!$initConnectionAloha['status']) {
             return [
                 'status' => false,
-                'message' => \Lang::get("POS Outlet Not Yet Mapping")
+                'message' => "Store " . $storeName . " Not Yet Mapping POS Configuration"
             ];
         }
+
+        $header = [
+            'store' => $storeName,
+            'date_from' => Helper::DateConvertFormat($dateFrom, 'Y/m/d', 'd/m/Y'),
+            'date_until' => Helper::DateConvertFormat($dateUntil, 'Y/m/d', 'd/m/Y'),
+        ];
+
+        $items = [];
+
+        $salesByInvetories = $posRepository->getDataSalesByInventory($storeID, $dateFrom, $dateUntil);
+
+        foreach ($salesByInvetories as $salesByInventory) {
+            $items[] = (object)[
+                'ProductName' => Material::getDescByCode($salesByInventory->BohName),
+                'ProductCode' => $salesByInventory->BohName,
+                'SaleModeName' => $salesByInventory->SalesMode,
+                'TotalQty' => $salesByInventory->Quantity
+            ];
+        }
+
+        return [
+            'status' => true,
+            'count' => sizeof($items),
+            'header' => $header,
+            'items' => $items,
+            'message' => ''
+        ];
+
+        // $storePos = ($pos == 0) ? Plant::getPosById($storeID) : $pos;
+
+        // if( $storePos == 1 ){
+        //     // 1 = aloha
+        //     return AlohaInterface::getDataSalesByInventoryReport($storeID, $dateFrom, $dateUntil);
+        // } else if ( $storePos == 2 ) {
+        //     // 2 = vtec
+        //     return VtecOrderDetail::getDataReportInventory($storeID, $dateFrom, $dateUntil, $source);
+        // } else {
+        //     return [
+        //         'status' => false,
+        //         'message' => Lang::get("POS Outlet Not Yet Mapping")
+        //     ];
+        // }
     }
 
     //  report
@@ -473,8 +549,8 @@ class AllPos extends Model
     public static function GenerateSalesByInventoryReportPdf($param)
     {
         $report_data = [
-            'title' => \Lang::get('Sales by Inventory Pos'),
-            'data' => AllPos::getDataSalesByInventoryReport($param->store, $param->pos, $param->from_date, $param->until_date, 'download')
+            'title' => Lang::get('Sales by Inventory Pos'),
+            'data' => AllPos::getDataSalesByInventoryReport($param->company_id, $param->store, $param->pos, $param->from_date, $param->until_date, 'download')
         ];
 
         $path = 'reports/pos/sales-by-inventory-pos/pdf/';
@@ -499,7 +575,7 @@ class AllPos extends Model
         $random = strtolower(Helper::generateRandomStr(8));
         $typefile = '.xlsx';
         $report = [];
-        if (Excel::store(new SalesByInventoryPos($param->store, $param->pos, $param->from_date, $param->until_date), $path . $filename . $random . $typefile, 'public')) {
+        if (Excel::store(new SalesByInventoryPos($param->company_id, $param->store, $param->pos, $param->from_date, $param->until_date), $path . $filename . $random . $typefile, 'public')) {
             $report = [
                 'path' => $path,
                 'filename' => $filename . $random . $typefile
@@ -510,22 +586,47 @@ class AllPos extends Model
 
     // summary payment promotion
 
-    public static function getDataSummaryPaymentPromotionReport($storeID, $pos, $date)
+    public static function getDataSummaryPaymentPromotionReport($companyId, $storeID, $pos, $date)
     {
-        $storePos = ($pos == 0) ? Plant::getPosById($storeID) : $pos;
+        $storeName = Plant::getShortNameById($storeID);
 
-        if( $storePos == 1 ){
-            // 1 = aloha
-            return Aloha::getDataSummaryPromotionReport($storeID, $date);
-        } else if ( $storePos == 2 ) {
-            // 2 = vtec
-            return VtecOrderPromotion::getDataReport($storeID, $date);
+        if ($pos == 0) {
+            $pos_id = Plant::getPosById($storeID);
+            if ($pos_id == '') {
+                return [
+                    'status' => false,
+                    'message' => "Store " . $storeName . " Not Yet Mapping POS"
+                ];
+            }
         } else {
+            $pos_id = $pos;
+        }
+
+        $pos = Pos::find($pos_id);
+
+        $posRepository = Pos::getInstanceRepo($pos);
+        $initConnectionAloha = $posRepository->initConnectionDB();
+        if (!$initConnectionAloha['status']) {
             return [
                 'status' => false,
-                'message' => \Lang::get("POS Outlet Not Yet Mapping")
+                'message' => "Store " . $storeName . " Not Yet Mapping POS Configuration"
             ];
         }
+
+        $header = [
+            'store' => $storeName,
+            'date' => Helper::DateConvertFormat($date, 'Y/m/d', 'd/m/Y'),
+        ];
+
+        $items = $posRepository->getDataSummaryPromotion($storeID, $date);
+
+        return [
+            'status' => true,
+            'count' => sizeof($items),
+            'header' => $header,
+            'items' => $items,
+            'message' => ''
+        ];
     }
 
     //  report
@@ -545,7 +646,7 @@ class AllPos extends Model
         $random = strtolower(Helper::generateRandomStr(8));
         $typefile = '.xlsx';
         $report = [];
-        if (Excel::store(new SummaryPaymentPromotionPos($param->store, $param->pos, $param->date), $path . $filename . $random . $typefile, 'public')) {
+        if (Excel::store(new SummaryPaymentPromotionPos($param->company_id, $param->store, $param->pos, $param->date), $path . $filename . $random . $typefile, 'public')) {
             $report = [
                 'path' => $path,
                 'filename' => $filename . $random . $typefile
@@ -556,32 +657,58 @@ class AllPos extends Model
 
     // sales menu per hour
 
-    public static function getDataSalesMenuPerHourReport($storeID, $pos, $dateFrom, $dateUntil, $source = 'view')
+    public static function getDataSalesMenuPerHourReport($companyId, $storeID, $pos, $dateFrom, $dateUntil, $source = 'view')
     {
         if($source == 'view'){
             $diffDay = Helper::DateDifference(Helper::DateConvertFormat($dateFrom, 'Y/m/d', 'Y-m-d'), Helper::DateConvertFormat($dateUntil, 'Y/m/d', 'Y-m-d'));
             if($diffDay > 7){
                 return [
                     'status' => false,
-                    'message' => \Lang::get("Date range should not be more than 7 days")
+                    'message' => Lang::get("Date range should not be more than 7 days")
                 ];
             }
         }
 
-        $storePos = ($pos == 0) ? Plant::getPosById($storeID) : $pos;
+        $storeName = Plant::getShortNameById($storeID);
 
-        if( $storePos == 1 ){
-            // 1 = aloha
-            return Aloha::getDataSalesMenuPerHourReport($storeID, $dateFrom, $dateUntil);
-        } else if ( $storePos == 2 ) {
-            // 2 = vtec
-            return VtecOrderDetail::getDataMenuPerHourReport($storeID, $dateFrom, $dateUntil, $source);
+        if ($pos == 0) {
+            $pos_id = Plant::getPosById($storeID);
+            if ($pos_id == '') {
+                return [
+                    'status' => false,
+                    'message' => "Store " . $storeName . " Not Yet Mapping POS"
+                ];
+            }
         } else {
+            $pos_id = $pos;
+        }
+
+        $pos = Pos::find($pos_id);
+
+        $posRepository = Pos::getInstanceRepo($pos);
+        $initConnectionAloha = $posRepository->initConnectionDB();
+        if (!$initConnectionAloha['status']) {
             return [
                 'status' => false,
-                'message' => \Lang::get("POS Outlet Not Yet Mapping")
+                'message' => "Store " . $storeName . " Not Yet Mapping POS Configuration"
             ];
         }
+
+        $header = [
+            'store' => $storeName,
+            'date_from' => Helper::DateConvertFormat($dateFrom, 'Y/m/d', 'd/m/Y'),
+            'date_until' => Helper::DateConvertFormat($dateUntil, 'Y/m/d', 'd/m/Y'),
+        ];
+
+        $items = $posRepository->getDataSalesMenuPerHour($storeID, $dateFrom, $dateUntil);
+
+        return [
+            'status' => true,
+            'count' => sizeof($items),
+            'header' => $header,
+            'items' => $items,
+            'message' => ''
+        ];
     }
 
     //  report
@@ -601,7 +728,7 @@ class AllPos extends Model
         $random = strtolower(Helper::generateRandomStr(8));
         $typefile = '.xlsx';
         $report = [];
-        if (Excel::store(new SalesMenuPerHourPos($param->store, $param->pos, $param->from_date, $param->until_date), $path . $filename . $random . $typefile, 'public')) {
+        if (Excel::store(new SalesMenuPerHourPos($param->company_id, $param->store, $param->pos, $param->from_date, $param->until_date), $path . $filename . $random . $typefile, 'public')) {
             $report = [
                 'path' => $path,
                 'filename' => $filename . $random . $typefile
@@ -612,32 +739,58 @@ class AllPos extends Model
 
     // sales inventory per hour
 
-    public static function getDataSalesInventoryPerHourReport($storeID, $pos, $dateFrom, $dateUntil, $source = 'view')
+    public static function getDataSalesInventoryPerHourReport($companyId, $storeID, $pos, $dateFrom, $dateUntil, $source = 'view')
     {
         if($source == 'view'){
             $diffDay = Helper::DateDifference(Helper::DateConvertFormat($dateFrom, 'Y/m/d', 'Y-m-d'), Helper::DateConvertFormat($dateUntil, 'Y/m/d', 'Y-m-d'));
             if($diffDay > 7){
                 return [
                     'status' => false,
-                    'message' => \Lang::get("Date range should not be more than 7 days")
+                    'message' => Lang::get("Date range should not be more than 7 days")
                 ];
             }
         }
 
-        $storePos = ($pos == 0) ? Plant::getPosById($storeID) : $pos;
+        $storeName = Plant::getShortNameById($storeID);
 
-        if( $storePos == 1 ){
-            // 1 = aloha
-            return Aloha::getDataSalesInventoryPerHourReport($storeID, $dateFrom, $dateUntil);
-        } else if ( $storePos == 2 ) {
-            // 2 = vtec
-            return VtecOrderDetail::getDataInventoryPerHourReport($storeID, $dateFrom, $dateUntil, $source);
+        if ($pos == 0) {
+            $pos_id = Plant::getPosById($storeID);
+            if ($pos_id == '') {
+                return [
+                    'status' => false,
+                    'message' => "Store " . $storeName . " Not Yet Mapping POS"
+                ];
+            }
         } else {
+            $pos_id = $pos;
+        }
+
+        $pos = Pos::find($pos_id);
+
+        $posRepository = Pos::getInstanceRepo($pos);
+        $initConnectionAloha = $posRepository->initConnectionDB();
+        if (!$initConnectionAloha['status']) {
             return [
                 'status' => false,
-                'message' => \Lang::get("POS Outlet Not Yet Mapping")
+                'message' => "Store " . $storeName . " Not Yet Mapping POS Configuration"
             ];
         }
+
+        $header = [
+            'store' => $storeName,
+            'date_from' => Helper::DateConvertFormat($dateFrom, 'Y/m/d', 'd/m/Y'),
+            'date_until' => Helper::DateConvertFormat($dateUntil, 'Y/m/d', 'd/m/Y'),
+        ];
+
+        $items = $posRepository->getDataSalesInventoryPerHour($storeID, $dateFrom, $dateUntil);
+
+        return [
+            'status' => true,
+            'count' => sizeof($items),
+            'header' => $header,
+            'items' => $items,
+            'message' => ''
+        ];
     }
 
     //  report
@@ -657,7 +810,7 @@ class AllPos extends Model
         $random = strtolower(Helper::generateRandomStr(8));
         $typefile = '.xlsx';
         $report = [];
-        if (Excel::store(new SalesInventoryPerHourPos($param->store, $param->pos, $param->from_date, $param->until_date), $path . $filename . $random . $typefile, 'public')) {
+        if (Excel::store(new SalesInventoryPerHourPos($param->company_id, $param->store, $param->pos, $param->from_date, $param->until_date), $path . $filename . $random . $typefile, 'public')) {
             $report = [
                 'path' => $path,
                 'filename' => $filename . $random . $typefile
@@ -668,32 +821,58 @@ class AllPos extends Model
 
     // void
 
-    public static function getDataVoidReport($storeID, $pos, $dateFrom, $dateUntil, $source = 'view')
+    public static function getDataVoidReport($companyId, $storeID, $pos, $dateFrom, $dateUntil, $source = 'view')
     {
         if($source == 'view'){
             $diffDay = Helper::DateDifference(Helper::DateConvertFormat($dateFrom, 'Y/m/d', 'Y-m-d'), Helper::DateConvertFormat($dateUntil, 'Y/m/d', 'Y-m-d'));
             if($diffDay > 7){
                 return [
                     'status' => false,
-                    'message' => \Lang::get("Date range should not be more than 7 days")
+                    'message' => Lang::get("Date range should not be more than 7 days")
                 ];
             }
         }
 
-        $storePos = ($pos == 0) ? Plant::getPosById($storeID) : $pos;
+        $storeName = Plant::getShortNameById($storeID);
 
-        if( $storePos == 1 ){
-            // 1 = aloha
-            return Aloha::getDataVoidReport($storeID, $dateFrom, $dateUntil);
-        } else if ( $storePos == 2 ) {
-            // 2 = vtec
-            return VtecOrderDetail::getDataVoidReport($storeID, $dateFrom, $dateUntil, $source);
+        if ($pos == 0) {
+            $pos_id = Plant::getPosById($storeID);
+            if ($pos_id == '') {
+                return [
+                    'status' => false,
+                    'message' => "Store " . $storeName . " Not Yet Mapping POS"
+                ];
+            }
         } else {
+            $pos_id = $pos;
+        }
+
+        $pos = Pos::find($pos_id);
+
+        $posRepository = Pos::getInstanceRepo($pos);
+        $initConnectionAloha = $posRepository->initConnectionDB();
+        if (!$initConnectionAloha['status']) {
             return [
                 'status' => false,
-                'message' => \Lang::get("POS Outlet Not Yet Mapping")
+                'message' => "Store " . $storeName . " Not Yet Mapping POS Configuration"
             ];
         }
+
+        $header = [
+            'store' => $storeName,
+            'date_from' => Helper::DateConvertFormat($dateFrom, 'Y/m/d', 'd/m/Y'),
+            'date_until' => Helper::DateConvertFormat($dateUntil, 'Y/m/d', 'd/m/Y'),
+        ];
+
+        $items = $posRepository->getDataVoid($storeID, $dateFrom, $dateUntil);
+
+        return [
+            'status' => true,
+            'count' => sizeof($items),
+            'header' => $header,
+            'items' => $items,
+            'message' => ''
+        ];
     }
 
     //  report
@@ -713,7 +892,7 @@ class AllPos extends Model
         $random = strtolower(Helper::generateRandomStr(8));
         $typefile = '.xlsx';
         $report = [];
-        if (Excel::store(new VoidPos($param->store, $param->pos, $param->from_date, $param->until_date), $path . $filename . $random . $typefile, 'public')) {
+        if (Excel::store(new VoidPos($param->company_id, $param->store, $param->pos, $param->from_date, $param->until_date), $path . $filename . $random . $typefile, 'public')) {
             $report = [
                 'path' => $path,
                 'filename' => $filename . $random . $typefile
@@ -724,32 +903,58 @@ class AllPos extends Model
 
     // sales per hour
 
-    public static function getDataSalesPerHourReport($storeID, $pos, $dateFrom, $dateUntil, $source = 'view')
+    public static function getDataSalesPerHourReport($companyId, $storeID, $pos, $dateFrom, $dateUntil, $source = 'view')
     {
         if($source == 'view'){
             $diffDay = Helper::DateDifference(Helper::DateConvertFormat($dateFrom, 'Y/m/d', 'Y-m-d'), Helper::DateConvertFormat($dateUntil, 'Y/m/d', 'Y-m-d'));
             if($diffDay > 7){
                 return [
                     'status' => false,
-                    'message' => \Lang::get("Date range should not be more than 7 days")
+                    'message' => Lang::get("Date range should not be more than 7 days")
                 ];
             }
         }
 
-        $storePos = ($pos == 0) ? Plant::getPosById($storeID) : $pos;
+        $storeName = Plant::getShortNameById($storeID);
 
-        if( $storePos == 1 ){
-            // 1 = aloha
-            return Aloha::getDataSalesPerHourReport($storeID, $dateFrom, $dateUntil);
-        } else if ( $storePos == 2 ) {
-            // 2 = vtec
-            return VtecOrderDetail::getDataSalesPerHourReport($storeID, $dateFrom, $dateUntil, $source);
+        if ($pos == 0) {
+            $pos_id = Plant::getPosById($storeID);
+            if ($pos_id == '') {
+                return [
+                    'status' => false,
+                    'message' => "Store " . $storeName . " Not Yet Mapping POS"
+                ];
+            }
         } else {
+            $pos_id = $pos;
+        }
+
+        $pos = Pos::find($pos_id);
+
+        $posRepository = Pos::getInstanceRepo($pos);
+        $initConnectionAloha = $posRepository->initConnectionDB();
+        if (!$initConnectionAloha['status']) {
             return [
                 'status' => false,
-                'message' => \Lang::get("POS Outlet Not Yet Mapping")
+                'message' => "Store " . $storeName . " Not Yet Mapping POS Configuration"
             ];
         }
+
+        $header = [
+            'store' => $storeName,
+            'date_from' => Helper::DateConvertFormat($dateFrom, 'Y/m/d', 'd/m/Y'),
+            'date_until' => Helper::DateConvertFormat($dateUntil, 'Y/m/d', 'd/m/Y'),
+        ];
+
+        $items = $posRepository->getDataSalesPerHour($storeID, $dateFrom, $dateUntil);
+
+        return [
+            'status' => true,
+            'count' => sizeof($items),
+            'header' => $header,
+            'items' => $items,
+            'message' => ''
+        ];
     }
 
     //  report
@@ -769,7 +974,7 @@ class AllPos extends Model
         $random = strtolower(Helper::generateRandomStr(8));
         $typefile = '.xlsx';
         $report = [];
-        if (Excel::store(new SalesPerHourPos($param->store, $param->pos, $param->from_date, $param->until_date), $path . $filename . $random . $typefile, 'public')) {
+        if (Excel::store(new SalesPerHourPos($param->company_id, $param->store, $param->pos, $param->from_date, $param->until_date), $path . $filename . $random . $typefile, 'public')) {
             $report = [
                 'path' => $path,
                 'filename' => $filename . $random . $typefile

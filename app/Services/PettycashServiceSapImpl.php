@@ -64,10 +64,10 @@ class PettycashServiceSapImpl implements PettycashService
                             'gl_account' => $transSubmit->gl_code,
                             'is_debit' => ($transSubmit->type == '0') ? true : false,
                             'gl_amount' => (int)$transSubmit->debit,
+                            'tax_code' => '', // please confirm to new interface
                             'assignment' => Plant::getShortNameById($transSubmit->plant_id),
                             'item_text' => strtolower($transSubmit->description),
                             'cost_center' => '', // please confirm to new interface
-                            'tax_code' => '', // please confirm to new interface
                         ];
                         $gl_temp[] = ['i' => $i_det, 'gl_code' => $transSubmit->gl_code];
                     }
@@ -82,10 +82,10 @@ class PettycashServiceSapImpl implements PettycashService
                             'gl_account' => $transSubmit->gl_code,
                             'is_debit' => ($transSubmit->type == '0') ? true : false,
                             'gl_amount' => (int)$transSubmit->kredit,
+                            'tax_code' => Configuration::getValueCompByKeyFor($companyId, 'financeacc', 'tax_code'),
                             'assignment' => Plant::getShortNameById($transSubmit->plant_id),
                             'item_text' => strtolower($transSubmit->description),
                             'cost_center' => Pettycash::getCCSAPFixed($companyId, $transSubmit->gl_code, $ccPlant, $transSubmit->plant_id),
-                            'tax_code' => 'v0',
                         ];
                         $gl_temp[] = ['i' => $i_det, 'gl_code' => $transSubmit->gl_code];
                     }
@@ -126,8 +126,8 @@ class PettycashServiceSapImpl implements PettycashService
             $data_posted = [
                 'company_id' => $sapCodeComp, // change to sap code company
                 'document_key' => $documentKey,
-                'transaction_type' => 'K',
                 'vendor_id' => $vendor,
+                'transaction_type' => 'K',
                 'invoice_date' => date("Y-m-d", strtotime($receiveDate)),
                 'posting_date' => date("Y-m-d"),
                 'reference' => $ref,

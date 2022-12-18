@@ -549,6 +549,11 @@ class SapRepositorySapImpl implements SapRepository
         $status = false;
         $response = false;
 
+        // !dd([
+        //     $res->status(),
+        //     $res->json()
+        // ]);
+
         if ($res->ok()) {
             $status = true;
             $response = $res->json();

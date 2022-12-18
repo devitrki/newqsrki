@@ -61,6 +61,8 @@ class GiPlantServiceSapImpl implements GiPlantService
             $coind += 1;
         }
 
+        $dataUpload = [$dataUpload];
+
         $sapRepository = new SapRepositorySapImpl($data_gi['header']->company_id);
         $sapResponse = $sapRepository->uploadGiPlant($dataUpload);
 

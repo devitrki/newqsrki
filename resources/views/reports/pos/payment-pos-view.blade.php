@@ -26,7 +26,7 @@
                             <div class="col-12">
                                 <x-form-vertical>
                                     <x-row-vertical label="Store">
-                                        <x-select :dom="$dom" compid="fstore" type="serverside" url="master/plant/select?type=outlet&auth=true" size="sm"/>
+                                        <x-select :dom="$dom" compid="fstore" type="serverside" url="master/plant/select?type=outlet&auth=true&have_pos=true" size="sm"/>
                                     </x-row-vertical>
                                     <x-row-vertical label="From Date">
                                         <x-pickerdate :dom="$dom" compid="ffromdate" data-value="{{ date('Y/m/d') }}" clear="false"/>
@@ -64,7 +64,7 @@
             <input type="text" class="form-control form-control-sm" id="export_type{{$dom}}" disabled>
         </x-row-horizontal>
         <x-row-horizontal label="Store">
-            <x-select :dom="$dom" compid="estore" type="serverside" url="master/plant/select?type=outlet&auth=true" size="sm"/>
+            <x-select :dom="$dom" compid="estore" type="serverside" url="master/plant/select?type=outlet&auth=true&have_pos=true" size="sm"/>
         </x-row-horizontal>
         <x-row-horizontal label="From Date">
             <x-pickerdate :dom="$dom" compid="efromdate" clear="false"/>

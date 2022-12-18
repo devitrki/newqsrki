@@ -20,7 +20,7 @@
                         </div>
                     </x-row-tools>
                 </x-slot>
-                <x-slot name="right">
+                {{-- <x-slot name="right">
                     <x-row-tools>
                         <x-dropdown-filter :dom="$dom" dtblecompid="tabledata">
                             <div class="col-12">
@@ -37,7 +37,7 @@
                             </div>
                         </x-dropdown-filter>
                     </x-row-tools>
-                </x-slot>
+                </x-slot> --}}
             </x-tools>
 
             {{-- frame --}}

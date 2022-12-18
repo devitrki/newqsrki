@@ -1272,6 +1272,19 @@ class MenuSeeder extends Seeder
         $gr_plant_report_menu->flag_end = 1;
         $gr_plant_report_menu->save();
 
+        // create menu file 'Payment Pos' 100
+        $payment_pos_menu = new Menu;
+        $payment_pos_menu->parent_id = $master_module->id; //for root menu
+        $payment_pos_menu->type = 1; // 1 = file
+        $payment_pos_menu->path = "17,100"; // path menu id for easy get structur
+        $payment_pos_menu->name = "Payment Pos";
+        $payment_pos_menu->description = "Menu for manage list payment pos";
+        $payment_pos_menu->url = "master/payment-pos";
+        $payment_pos_menu->permission_menu = "C,R,U,D";
+        $payment_pos_menu->sort_order = 14;
+        $payment_pos_menu->flag_end = 1;
+        $payment_pos_menu->save();
+
         // commit transaction
         DB::commit();
     }
