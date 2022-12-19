@@ -25,6 +25,16 @@ class PlantServiceSapImpl implements PlantService
             ];
         }
 
+        $allowPlant = Company::getConfigByKey($companyId, 'ALLOW_PLANTS');
+        if (!$allowPlant || $allowPlant == '') {
+            return [
+                'status' => false,
+                'message' => Lang::get('Please set ALLOW_PLANTS in company configuration'),
+            ];
+        }
+
+        $allowPlants = explode(',', $allowPlant);
+
         $payload = [
             'company_id' => $sapCodeComp
         ];
@@ -40,11 +50,11 @@ class PlantServiceSapImpl implements PlantService
 
             foreach ($plants as $p) {
 
-                if(!in_array($p['plant_id'][0], ['F','R']) ){
+                if(!in_array($p['plant_id'][0], $allowPlants) ){
                     continue;
                 }
 
-                $plant_type = Plant::getTypePlant($p['plant_id']);
+                $plant_type = Plant::getTypePlant($companyId, $p['plant_id']);
 
                 $count_plant = Plant::where('code', $p['plant_id'])->where('company_id', $companyId)->count();
                 if ($count_plant > 0) {
@@ -52,7 +62,7 @@ class PlantServiceSapImpl implements PlantService
                     $plant = Plant::where('code', $p['plant_id'])->first();
                     $plant->short_name = Plant::cleanInisialPlant($p['name']);
                     $plant->description = $p['name'];
-                    $plant->initital = Plant::getInitialPlant($p['plant_id']);
+                    $plant->initital = Plant::getInitialPlant($companyId, $p['plant_id']);
                     $plant->type = ($plant_type != 'Outlet') ? 2 : 1 ;
                     $plant->address = $p['address'] . ' ' . $p['city'];
                     $plant->cost_center = $p['cost_center_id'];
@@ -68,7 +78,7 @@ class PlantServiceSapImpl implements PlantService
                     $plant->code = $p['plant_id'];
                     $plant->short_name = Plant::cleanInisialPlant($p['name']);
                     $plant->description = $p['name'];
-                    $plant->initital = Plant::getInitialPlant($p['plant_id']);
+                    $plant->initital = Plant::getInitialPlant($companyId, $p['plant_id']);
                     $plant->type = ($plant_type != 'Outlet') ? 2 : 1 ;
                     $plant->address = $p['address'] . ' ' . $p['city'];
                     $plant->status = 1;

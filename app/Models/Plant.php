@@ -748,12 +748,36 @@ class Plant extends Model implements Auditable
         return $slocIdGiPlant;
     }
 
-    public static function getTypePlant($plant){
-        return ($plant[0] != 'R') ? 'Outlet' : 'DC';
+    public static function getTypePlant($companyId, $plant){
+        $plantCodeDc = Company::getConfigByKey($companyId, 'PLANT_CODE_DC');
+        $plantCodeLengthDc = Company::getConfigByKey($companyId, 'PLANT_CODE_LENGTH_DC');
+        if (!$plantCodeDc || $plantCodeDc == '' || !$plantCodeLengthDc || $plantCodeLengthDc == '') {
+            return 'Outlet';
+        }
+
+        $plantCodeDc = explode(',', $plantCodeDc);
+
+        if (in_array(substr($plant, 0, $plantCodeLengthDc), $plantCodeDc)) {
+            return 'DC';
+        } else {
+            return 'Outlet';
+        }
     }
 
-    public static function getInitialPlant($plant){
-        return ($plant[0] != 'R') ? 'RF' : 'DC';
+    public static function getInitialPlant($companyId, $plant){
+        $plantCodeDc = Company::getConfigByKey($companyId, 'PLANT_CODE_DC');
+        $plantCodeLengthDc = Company::getConfigByKey($companyId, 'PLANT_CODE_LENGTH_DC');
+        if (!$plantCodeDc || $plantCodeDc == '' || !$plantCodeLengthDc || $plantCodeLengthDc == '') {
+            return 'RF';
+        }
+
+        $plantCodeDc = explode(',', $plantCodeDc);
+
+        if (in_array(substr($plant, 0, $plantCodeLengthDc), $plantCodeDc)) {
+            return 'DC';
+        } else {
+            return 'RF';
+        }
     }
 
     public static function cleanInisialPlant($plant){
