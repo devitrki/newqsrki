@@ -61,9 +61,9 @@ class NotificationSelisihAssetSo extends Mailable
     {
         return new Envelope(
             subject: $this->subjectMail,
-            to: 'yudhapermana.dev@gmail.com',
-            // to: $this->toEmails,
-            // cc: $this->ccEmails
+            // to: 'yudhapermana.dev@gmail.com',
+            to: $this->toEmails,
+            cc: $this->ccEmails
         );
     }
 

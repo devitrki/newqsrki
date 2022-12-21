@@ -257,9 +257,9 @@ class NotificationMutation extends Mailable
     {
         return new Envelope(
             subject: $this->subjectMail,
-            to: 'yudhapermana.dev@gmail.com',
-            // to: $this->toMail
-            // cc: $this->ccMail
+            // to: 'yudhapermana.dev@gmail.com',
+            to: $this->toMail,
+            cc: $this->ccMail
         );
     }
 
