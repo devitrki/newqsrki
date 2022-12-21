@@ -64,7 +64,7 @@
         id: 0,
     },
     url: {
-        save: "inventory/configuration",
+        save: "inventory/configuration-inventory",
     },
     event: {
     },
