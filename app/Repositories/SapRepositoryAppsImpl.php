@@ -326,4 +326,9 @@ class SapRepositoryAppsImpl implements SapRepository
         ];
     }
 
+    public function getTransactionLog($payload)
+    {
+            return [];
+    }
+
 }

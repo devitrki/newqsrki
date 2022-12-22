@@ -114,6 +114,12 @@ class SapRepositorySapImpl implements SapRepository
         return $this->doHttp($path, $payload);
     }
 
+    public function getTransactionLog($payload)
+    {
+        $path = SapMiddleware::LIST_TRANSACTION_LOG_PATH_URL;
+        return $this->doHttp($path, $payload);
+    }
+
     public function syncAsset($payload)
     {
         $path = SapMiddleware::MASTER_ASSET_PATH_URL;
@@ -501,6 +507,35 @@ class SapRepositorySapImpl implements SapRepository
         return Http::response($fakeResponse, $statusCode);
     }
 
+    public function getTransactionLogFake($success = null, $statusCode = null)
+    {
+        if ($success === null) {
+            $success = true;
+        }
+
+        if ($statusCode === null) {
+            $statusCode = 200;
+        }
+
+        $fakeResponse = [
+            'outlet_id' => '6000004',
+            'payments' => [
+                'success' => true,
+                'errors' => null
+            ],
+            'sales' => [
+                'success' => true,
+                'errors' => null
+            ],
+            'inventories' => [
+                'success' => true,
+                'errors' => null
+            ],
+        ];
+
+        return Http::response($fakeResponse, $statusCode);
+    }
+
     // utility
     private function setupHttpFake(){
         Http::fake([
@@ -515,6 +550,7 @@ class SapRepositorySapImpl implements SapRepository
             $this->baseUrl . SapMiddleware::LIST_OUTSTANDING_PO_PATH_URL => $this->getOutstandingPoPlantFake(false),
             $this->baseUrl . SapMiddleware::LIST_OUTSTANDING_GR_PATH_URL => $this->getOutstandingGrFake(false),
             $this->baseUrl . SapMiddleware::MASTER_ASSET_PATH_URL => $this->syncAssetFake(false),
+            $this->baseUrl . SapMiddleware::LIST_TRANSACTION_LOG_PATH_URL => $this->getTransactionLogFake(true),
         ]);
     }
 

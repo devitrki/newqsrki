@@ -58,7 +58,7 @@ class ScheduleMassClearing implements ShouldQueue
                             ->get();
 
         foreach ($massClearingDetails as $massClearingDetail) {
-            GenerateMassClearing::dispatch($massClearingDetail)->onQueue('massclearing');
+            GenerateMassClearing::dispatch($massClearing->company_id, $massClearingDetail)->onQueue('massclearing');
         }
 
     }

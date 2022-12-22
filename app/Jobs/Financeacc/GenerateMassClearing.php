@@ -14,21 +14,22 @@ use App\Library\Helper;
 
 use App\Exports\Financeacc\MassClearingExport;
 
-use App\Models\Financeacc\MassClearing;
-use App\Models\Financeacc\MassClearingDetail;
-use App\Models\Interfaces\AlohaTransactionLog;
-use App\Models\Interfaces\VtecOrderPayDetail;
 use App\Models\Plant;
-use App\Models\Pos\Aloha;
+use App\Models\Pos;
 use App\Models\SpecialGl;
 use App\Models\BankChargeGl;
+use App\Models\Configuration;
+use App\Models\Financeacc\MassClearing;
+use App\Models\Financeacc\MassClearingDetail;
 use App\Models\Financeacc\MassClearingGenerate;
-use App\Models\Interfaces\VtecTransactionLog;
+
+use App\Repositories\SapRepositorySapImpl;
 
 class GenerateMassClearing implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    protected $companyId;
     protected $massClearingDetail;
 
     /**
@@ -36,8 +37,9 @@ class GenerateMassClearing implements ShouldQueue
      *
      * @return void
      */
-    public function __construct($massClearingDetail)
+    public function __construct($companyId, $massClearingDetail)
     {
+        $this->companyId = $companyId;
         $this->massClearingDetail = $massClearingDetail;
     }
 
@@ -82,13 +84,13 @@ class GenerateMassClearing implements ShouldQueue
             MassClearingDetail::updateMassClearingDetail('status_process', 1, $transaction->id);
         }
 
-        // 1 = aloha 2 = vtec
-        $pos = Plant::getPosById($massClearingDetail->plant_id);
+        $pos_id = Plant::getPosById($massClearingDetail->plant_id);
+        $pos = Pos::find($pos_id);
         $sapCode = SpecialGl::getSapCodebySpecialGl($massClearingDetail->special_gl);
         $reference = SpecialGl::getRefbySpecialGl($massClearingDetail->special_gl);
         $salesDates = MassClearingDetail::getSalesDate($massClearingDetail);
+        $customerCodePlant = Plant::getCustomerCodeById($massClearingDetail->plant_id);
         $nominalPos = 0;
-        $documentNumberSalesSaps = [];
         $postingSap = true;
         $totalBankCharge = (int)$massClearingDetail->bank_in_charge;
         $totalBankIn = $massClearingDetail->bank_in_nominal + $totalBankCharge;
@@ -97,34 +99,39 @@ class GenerateMassClearing implements ShouldQueue
 
         // get nominal pos and doc number by sales date
         foreach ($salesDates as $salesDate) {
-            if( $pos != 1 ){
-                // vtec
-                $documentNumberSalesSap = VtecTransactionLog::getDocumentNumberSalesSap($massClearingDetail->plant_id, $salesDate);
-                if($documentNumberSalesSap == ''){
+            $dataUpload = [
+                'outlet_id' => $customerCodePlant,
+                'transaction_date' => $salesDate
+            ];
+
+            $sapRepository = new SapRepositorySapImpl($this->companyId);
+            $sapResponse = $sapRepository->getTransactionLog($dataUpload);
+            if ($sapResponse['status']) {
+                $respSap = $sapResponse['response'];
+                if (!$respSap['sales']['success']) {
                     $postingSap = false;
                     break;
                 }
-                $documentNumberSalesSaps[] = $documentNumberSalesSap;
 
-                $nominalPosDate = VtecOrderPayDetail::getTotalPaymentByMethodPayment($massClearingDetail->plant_id, $salesDate, $sapCode);
+                $posRepository = Pos::getInstanceRepo($pos);
+                $initConnectionAloha = $posRepository->initConnectionDB();
+                if (!$initConnectionAloha['status']) {
+                    $postingSap = false;
+                    break;
+                }
+
+                $nominalPosDate = $posRepository->getTotalPaymentByMethodPayment($massClearingDetail->plant_id, $salesDate, $sapCode);
+
             } else {
-                // aloha
-                $documentNumberSalesSap = AlohaTransactionLog::getDocumentNumberSalesSap($massClearingDetail->plant_id, $salesDate);
-                if($documentNumberSalesSap == ''){
-                    $postingSap = false;
-                    break;
-                }
-                $documentNumberSalesSaps[] = $documentNumberSalesSap;
-
-                $nominalPosDate = Aloha::getTotalPaymentByMethodPayment($massClearingDetail->plant_id, $salesDate, $sapCode);
+                $postingSap = false;
+                break;
             }
 
             $nominalPos += $nominalPosDate;
         }
 
-        $documentNumber = implode(',', $documentNumberSalesSaps);
+        $documentNumber = '';
         $shortNamePlant = strtoupper(Plant::getShortNameById($massClearingDetail->plant_id, false));
-        $customerCodePlant = Plant::getCustomerCodeById($massClearingDetail->plant_id);
         $selisih = abs($nominalPos - $totalBankIn);
         $selisihPercent = 0;
         if($nominalPos <> 0){
@@ -246,7 +253,7 @@ class GenerateMassClearing implements ShouldQueue
                 if( $referenceCharge != 'BANK CHARGE' ){
                     $referenceChargeText = $referenceCharge . ' ' . $reference;
                 }else{
-                    $costCenter = 'C1200002';
+                    $costCenter = Configuration::getValueCompByKeyFor($this->companyId, 'financeacc', 'cost_center_bank_charge');
                 }
 
                 // insert to generate
@@ -262,7 +269,7 @@ class GenerateMassClearing implements ShouldQueue
                     'reference' => $shortNamePlant,
                     'gl_account' => BankChargeGl::getGlAccountCharge( $massClearingDetail->special_gl,  $massClearingDetail->bank_in_bank_gl),
                     'value' => $totalBankCharge,
-                    'tax_code' => 'A0',
+                    'tax_code' => Configuration::getValueCompByKeyFor($this->companyId, 'financeacc', 'tax_code_mass_clearing'),
                     'assigment' => $referenceCharge,
                     'text' => $referenceChargeText . ' ' . $shortNamePlant . ' ' . $salesDateDesc,
                     'cost_center' => $costCenter,
@@ -272,8 +279,8 @@ class GenerateMassClearing implements ShouldQueue
             // check this transaction is cash and have tolerance selisih
             if( $selisih > 0 && $selisih < 100 && strtoupper($massClearingDetail->special_gl) == '3' ){
 
-                $glAccountSelisih = '70050102';
-                $assigmentSelisih = 'SELISIH SISTEM';
+                $glAccountSelisih = Configuration::getValueCompByKeyFor($this->companyId, 'financeacc', 'gl_account_deviation');
+                $assigmentSelisih = Configuration::getValueCompByKeyFor($this->companyId, 'financeacc', 'description_deviation');
 
                 // insert to generate
                 $insertGenerateItems[] = [
@@ -288,7 +295,7 @@ class GenerateMassClearing implements ShouldQueue
                     'reference' => $shortNamePlant,
                     'gl_account' => $glAccountSelisih,
                     'value' => $selisih,
-                    'tax_code' => 'A0',
+                    'tax_code' => Configuration::getValueCompByKeyFor($this->companyId, 'financeacc', 'tax_code_mass_clearing'),
                     'assigment' => $assigmentSelisih,
                     'text' => $assigmentSelisih . ' ' . $shortNamePlant . ' ' . $salesDateDesc,
                     'cost_center' => $costCenter,

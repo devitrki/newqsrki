@@ -20,9 +20,13 @@ use App\Models\Interfaces\AlohaTransactionLog;
 use App\Models\Interfaces\VtecTransactionLog;
 use App\Models\Interfaces\VtecOrderPayDetail;
 use App\Models\Plant;
+use App\Models\Pos;
 use App\Models\Pos\Aloha;
 use App\Models\SpecialGl;
 use App\Models\BankChargeGl;
+
+use App\Repositories\SapRepositorySapImpl;
+use App\Entities\SapMiddleware;
 
 class MassClearingController extends Controller
 {
@@ -150,8 +154,11 @@ class MassClearingController extends Controller
         $msg = Lang::get("message.upload.success", ["data" => Lang::get("Mass Clearing")]);
 
         if ($request->file('file_excel')) {
+
+            $userAuth = $request->get('userAuth');
+
             try {
-                $import = new MassClearingImport($request->description);
+                $import = new MassClearingImport($userAuth->company_id_selected, $request->description);
                 Excel::import($import, request()->file('file_excel'));
                 $return = $import->return;
 
@@ -178,11 +185,11 @@ class MassClearingController extends Controller
     public function generate()
     {
         $massClearing = DB::table('mass_clearings')
-                            ->where('id', 3)
+                            ->where('id', 7)
                             ->first();
 
         $massClearingDetails = DB::table('mass_clearing_details')
-                            ->where('mass_clearing_id', 3)
+                            ->where('mass_clearing_id', 7)
                             ->select(
                                 'mass_clearing_id',
                                 'bank_in_bank_gl',
@@ -202,39 +209,47 @@ class MassClearingController extends Controller
         $resultProcess = [];
 
         foreach ($massClearingDetails as $massClearingDetail) {
-            // 1 = aloha 2 = vtec
-            $pos = Plant::getPosById($massClearingDetail->plant_id);
+            $pos_id = Plant::getPosById($massClearingDetail->plant_id);
+            $pos = Pos::find($pos_id);
             $sapCode = SpecialGl::getSapCodebySpecialGl($massClearingDetail->special_gl);
             $reference = SpecialGl::getRefbySpecialGl($massClearingDetail->special_gl);
             $salesDates = MassClearingDetail::getSalesDate($massClearingDetail);
+            $customerCodePlant = Plant::getCustomerCodeById($massClearingDetail->plant_id);
+
             $nominalPos = 0;
-            $documentNumberSalesSaps = [];
             $postingSap = true;
             $totalBankCharge = (int)$massClearingDetail->bank_in_charge;
             $totalBankIn = $massClearingDetail->bank_in_nominal + $totalBankCharge;
             $generate = true;
 
             foreach ($salesDates as $salesDate) {
-                if( $pos != 1 ){
-                    // vtec
-                    $documentNumberSalesSap = VtecTransactionLog::getDocumentNumberSalesSap('66', '2021-05-10');
-                    if($documentNumberSalesSap == ''){
+
+                $dataUpload = [
+                    'outlet_id' => $customerCodePlant,
+                    'transaction_date' => $salesDate
+                ];
+
+                $sapRepository = new SapRepositorySapImpl($massClearing->company_id, true);
+                $sapResponse = $sapRepository->getTransactionLog($dataUpload);
+                if ($sapResponse['status']) {
+                    $respSap = $sapResponse['response'];
+                    if (!$respSap['sales']['success']) {
                         $postingSap = false;
                         break;
                     }
-                    $documentNumberSalesSaps[] = $documentNumberSalesSap;
 
-                    $nominalPosDate = VtecOrderPayDetail::getTotalPaymentByMethodPayment($massClearingDetail->plant_id, '2020-10-07', 'DZ');
+                    $posRepository = Pos::getInstanceRepo($pos);
+                    $initConnectionAloha = $posRepository->initConnectionDB();
+                    if (!$initConnectionAloha['status']) {
+                        $postingSap = false;
+                        break;
+                    }
+
+                    $nominalPosDate = $posRepository->getTotalPaymentByMethodPayment($massClearingDetail->plant_id, $salesDate, $sapCode);
+
                 } else {
-                    // aloha
-                    $documentNumberSalesSap = AlohaTransactionLog::getDocumentNumberSalesSap('66', '2021-05-10');
-                    if($documentNumberSalesSap == ''){
-                        $postingSap = false;
-                        break;
-                    }
-                    $documentNumberSalesSaps[] = $documentNumberSalesSap;
-
-                    $nominalPosDate = Aloha::getTotalPaymentByMethodPayment($massClearingDetail->plant_id, $salesDate, $sapCode);
+                    $postingSap = false;
+                    break;
                 }
 
                 $nominalPos += $nominalPosDate;
@@ -264,9 +279,8 @@ class MassClearingController extends Controller
                 }
             }
 
-            $documentNumber = implode(',', $documentNumberSalesSaps);
+            $documentNumber = '';
             $shortNamePlant = strtoupper(Plant::getShortNameById($massClearingDetail->plant_id, false));
-            $customerCodePlant = Plant::getCustomerCodeById($massClearingDetail->plant_id);
             $bankInDate = Helper::DateConvertFormat($massClearingDetail->bank_in_date, 'Y-m-d', 'Ymd');
             $bankInMonthDate = Helper::DateConvertFormat($massClearingDetail->bank_in_date, 'Y-m-d', 'n');
             $salesDateDesc = '';

@@ -17,5 +17,6 @@ interface SapRepository {
     public function getOutstandingPoPlantReport($param);
     public function getOutstandingGr($param);
     public function getCurrentStockPlant($param);
+    public function getTransactionLog($payload);
     public function syncAsset($param);
 }

@@ -20,10 +20,12 @@ use App\Models\SpecialGl;
 
 class MassClearingImport implements ToCollection, WithStartRow
 {
+    protected $companyId;
     protected $description;
 
-    function __construct($description)
+    function __construct($companyId, $description)
     {
+        $this->companyId = $companyId;
         $this->description = $description;
     }
 
@@ -47,6 +49,7 @@ class MassClearingImport implements ToCollection, WithStartRow
         $massClearingId = 0;
 
         $massClearing = new MassClearing;
+        $massClearing->company_id = $this->companyId;
         $massClearing->description = $this->description;
         $massClearing->user_id = Auth::id();
         if( $massClearing->save() ){

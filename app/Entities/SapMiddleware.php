@@ -18,6 +18,7 @@ class SapMiddleware
     const LIST_OUTSTANDING_GR_PATH_URL  = '/' . self::VERSION . '/gr/outstanding';
     const LIST_OUTSTANDING_PO_PATH_URL  = '/' . self::VERSION . '/po/outstanding';
     const LIST_CURRENT_STOCK_PATH_URL   = '/' . self::VERSION . '/stock/current';
+    const LIST_TRANSACTION_LOG_PATH_URL   = '/' . self::VERSION . '/log/console';
 
     public static function generateSignature($apiKey, $secretKey, $timestamp, $path, $payload, $method = null){
         if ($method === null) {

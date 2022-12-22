@@ -9,7 +9,7 @@
             <th>Company Code</th>
             <th>Currency</th>
             <th>Special G/L</th>
-            <th>Doc Number / Assiment</th>
+            <th>Doc Number / Assigment</th>
             <th>AR Value</th>
             <th>Reference</th>
             <th>Header Text</th>
