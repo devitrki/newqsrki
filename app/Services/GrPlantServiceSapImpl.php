@@ -118,7 +118,7 @@ class GrPlantServiceSapImpl implements GrPlantService
                 $detailOutstanding['header']['doc_date'] = $detailOutstandingSap[0]['document_date'];
                 $detailOutstanding['header']['document_number'] = $documentNumber;
                 $detailOutstanding['header']['plant'] = $detailOutstandingSap[0]['receiving_plant_id'];
-                $detailOutstanding['header']['plant_from'] = $plant->code;
+                $detailOutstanding['header']['plant_from'] = $detailOutstandingSap[0]['supplying_plant_id'];
                 $detailOutstanding['header']['po_number'] = $detailOutstandingSap[0]['po_number'];
                 $detailOutstanding['header']['text'] = $detailOutstandingSap[0]['header_text'];
             }
@@ -184,7 +184,7 @@ class GrPlantServiceSapImpl implements GrPlantService
 
             $dataUpload['items'][] = [
                 'movement_type_id' => '',
-                'po_item' => $material[1],
+                'po_item' => $material[1] . '',
                 'material_id' => $material[2],
                 'sloc_id' => $slocIdGr,
                 'entry_qty' => (float)$qtyIndex,
@@ -194,7 +194,7 @@ class GrPlantServiceSapImpl implements GrPlantService
         }
 
         $sapRepository = new SapRepositorySapImpl($companyId);
-        $sapResponse = $sapRepository->uploadGrVendor($dataUpload);
+        $sapResponse = $sapRepository->uploadGrPlant($dataUpload);
 
         $document_number = ""; #no GR
 
