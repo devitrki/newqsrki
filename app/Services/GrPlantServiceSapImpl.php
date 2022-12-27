@@ -50,7 +50,13 @@ class GrPlantServiceSapImpl implements GrPlantService
             $outstandingSap = $sapResponse['response'];
 
             if ($filter) {
+                $giExist = [];
+
                 foreach ($outstandingSap as $v) {
+                    if (in_array($v['gi_number'], $giExist)) {
+                        continue;
+                    }
+
                     $plant_from = Plant::getShortNameByCode($v['supplying_plant_id']);
                     $plant_to = Plant::getShortNameByCode($v['receiving_plant_id']);
                     $outstanding[] = [
@@ -61,6 +67,8 @@ class GrPlantServiceSapImpl implements GrPlantService
                         'document_number' => $v['gi_number'],
                         'mutation_date' => Helper::DateConvertFormat($v['delivery_date'], 'Y-m-d', 'd/m/Y'),
                     ];
+
+                    $giExist[] = $v['gi_number'];
                 }
             } else {
                 $outstanding = $outstandingSap;
