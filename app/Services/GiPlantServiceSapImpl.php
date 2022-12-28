@@ -73,39 +73,18 @@ class GiPlantServiceSapImpl implements GiPlantService
             $resSap = $sapResponse['response'];
             $lastRespSap = $resSap[sizeof($resSap) - 1];
 
-            if ($lastRespSap['status'] == 'S') {
-
-                if (strtolower($lastRespSap['stat1']) == "x" &&
-                    strtolower($lastRespSap['stat2']) == "x" &&
-                    strtolower($lastRespSap['stat3']) == "x" &&
-                    $lastRespSap['gi_status']['success'] &&
-                    $lastRespSap['po_status']['success'] &&
-                    $lastRespSap['gi_status']['document_number'] != '' &&
-                    $lastRespSap['po_status']['document_number'] != ''
-                    )
-                {
-                    $document_number = $lastRespSap['gi_status']['document_number'];
-                    $document_posto = $lastRespSap['po_status']['document_number'];
-                    $message = Lang::get("message.upload.success", ["data" => Lang::get("gi plant")]);
-                } else {
-                    $status = false;
-
-                    if ($lastRespSap['po_status']['success']) {
-                        if ($lastRespSap['po_status']['document_number'] != "") {
-                            $document_posto = $lastRespSap['po_status']['document_number'];
-                            $message = Lang::get("POSTO numbers have been created, but not GI numbers. Please resend a few minutes later");
-                        }
-                    }
-                }
-
-            }  else {
+            if ($lastRespSap['gi_status']['success'] &&
+                $lastRespSap['po_status']['success'] &&
+                $lastRespSap['release_status']['success'] &&
+                $lastRespSap['gi_status']['document_number'] != '' &&
+                $lastRespSap['po_status']['document_number'] != ''
+                )
+            {
+                $document_number = $lastRespSap['gi_status']['document_number'];
+                $document_posto = $lastRespSap['po_status']['document_number'];
+                $message = Lang::get("message.upload.success", ["data" => Lang::get("gi plant")]);
+            } else {
                 $status = false;
-
-                if (isset($lastRespSap['message'])) {
-                    $message = Lang::get("Feedback SAP") .  ' : '  . $lastRespSap['message'];
-                } else {
-                    $message = Lang::get("Sorry, an error occurred, please try again later");
-                }
 
                 if ($lastRespSap['po_status']['success']) {
                     if ($lastRespSap['po_status']['document_number'] != "") {

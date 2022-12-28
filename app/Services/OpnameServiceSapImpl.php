@@ -138,7 +138,6 @@ class OpnameServiceSapImpl implements OpnameService
 
         $sapRepository = new SapRepositorySapImpl($opname->company_id);
         $sapResponse = $sapRepository->uploadOpname($dataUpload);
-
         if ($sapResponse['status']) {
             $resSap = $sapResponse['response'];
 
@@ -146,7 +145,38 @@ class OpnameServiceSapImpl implements OpnameService
             $status = true;
 
             if ((bool)$resSap['success']) {
-                $document_number = $resSap['document_number'];
+                $message = $resSap['message'];
+                if (is_array($message)) {
+                    //Error / Warning dan sukses bisa dalam dalam array return
+                    //No. DOC selalu ada direturn array terakhir dengan strpos 'posted'
+                    $last_error = $message[sizeof($message) - 1];
+                    if (substr($last_error['MESSAGE'], 0, 8) == 'Document') {
+                        $message          = explode(' ', $last_error['MESSAGE']);
+                        $document_number = $message[1];
+                    } else {
+                        $errors = [];
+                        foreach ($message as $error) {
+                            $errors[] = $error['MESSAGE'];
+                        }
+
+                        if ($errors){
+                            $status = false;
+                            $message = Lang::get("Feedback SAP") . ' : ' . implode(' <br/> ', $errors);
+                        }
+                    }
+                } elseif (substr( trim($message) , -15, -11) == 'doc.') {
+                    //Jika sukses returnnya string
+                    $message          = explode(' ', $message);
+                    $document_number = $message[10];
+                } elseif (substr( trim($message) , 0, 24) == 'Diffs in phys. inv. doc.') {
+                    //Jika sukses returnnya string
+                    $message          = explode(' ', $message);
+                    $document_number = $message[sizeof($message)];
+                } else {
+                    $status = false;
+                    $message = Lang::get("Feedback SAP") . ' : ' . $message;
+                }
+
                 if( $document_number != '' ){
                     DB::BeginTransaction();
 
@@ -183,7 +213,6 @@ class OpnameServiceSapImpl implements OpnameService
                     $message = Lang::get("message.submit.success", ["data" => Lang::get("opname")]);
                 } else {
                     $status = false;
-                    $message = Lang::get("Feedback SAP") . ' : Document number not created';
                 }
             } else {
                 $status = false;

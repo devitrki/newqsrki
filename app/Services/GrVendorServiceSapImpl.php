@@ -101,6 +101,7 @@ class GrVendorServiceSapImpl implements GrVendorService
 
         $dataUpload = [
             'company_id' => $sapCodeComp,
+            'plant_id' => Plant::getCodeById($request->plant_id),
             'po_number' => $request->po_number,
             'posting_date' => Helper::DateConvertFormat($request->posting_date, 'Y/m/d', 'Y-m-d'),
             'reference_number' => $request->ref_number,
@@ -114,7 +115,7 @@ class GrVendorServiceSapImpl implements GrVendorService
                     'qty_entry' => (float)$request->qty_gr,
                     'receiver' => $request->recepient,
                     'sloc_id' => Plant::getSlocIdGrVendor($request->plant_id),
-                    'plant_id' => Plant::getCodeById($request->plant_id)
+                    'uom_id' => $request->uom
                 ]
             ],
         ];

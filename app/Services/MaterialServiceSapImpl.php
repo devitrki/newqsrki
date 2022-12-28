@@ -77,7 +77,10 @@ class MaterialServiceSapImpl implements MaterialService
             }
 
             // what it material already exist in database
-            $cMaterial = DB::table('materials')->where('code', $material_code)->count();
+            $cMaterial = DB::table('materials')
+                            ->where('company_id', $companyId)
+                            ->where('code', $material_code)
+                            ->count();
             if( $cMaterial > 0 ){
                 // replace data except code
                 $material = Material::where('code', $material_code)->first();
