@@ -43,7 +43,6 @@ class GrPlantServiceSapImpl implements GrPlantService
 
         $sapRepository = new SapRepositorySapImpl($plant->company_id);
         $sapResponse = $sapRepository->getOutstandingPoVendor($param);
-
         $outstanding = [];
 
         if ($sapResponse['status']) {
@@ -53,7 +52,8 @@ class GrPlantServiceSapImpl implements GrPlantService
                 $giExist = [];
 
                 foreach ($outstandingSap as $v) {
-                    if (in_array($v['gi_number'], $giExist)) {
+                    $remainingQty = $v['schedule_qty'] + $v['gr_qty'];
+                    if (in_array($v['gi_number'], $giExist) || $remainingQty <= 0) {
                         continue;
                     }
 
