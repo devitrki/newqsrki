@@ -37,12 +37,15 @@ class MassClearingController extends Controller
         return view('financeacc.mass-clearing', $dataview)->render();
     }
 
-    public function dtble()
+    public function dtble(Request $request)
     {
+        $userAuth = $request->get('userAuth');
+
         $query = DB::table('mass_clearings')
                     ->join('users', 'users.id', 'mass_clearings.user_id')
                     ->join('profiles', 'profiles.id', 'users.profile_id')
                     ->select('mass_clearings.*', 'profiles.name')
+                    ->where('mass_clearings.company_id', $userAuth->company_id_selected)
                     ->orderByDesc('id');
 
         return Datatables::of($query)
@@ -223,20 +226,42 @@ class MassClearingController extends Controller
             $generate = true;
 
             foreach ($salesDates as $salesDate) {
+                $nominalPosDate = 0;
 
                 $dataUpload = [
-                    'outlet_id' => $customerCodePlant,
-                    'transaction_date' => $salesDate
+                    'outlet_id' => '6000001',
+                    'transaction_date' => '2019-12-15'
                 ];
 
-                $sapRepository = new SapRepositorySapImpl($massClearing->company_id, true);
+                $sapRepository = new SapRepositorySapImpl($massClearing->company_id);
                 $sapResponse = $sapRepository->getTransactionLog($dataUpload);
                 if ($sapResponse['status']) {
                     $respSap = $sapResponse['response'];
-                    if (!$respSap['sales']['success']) {
+
+                    !dd($respSap);
+
+                    if (!$respSap['success'] || !$respSap['logs']) {
                         $postingSap = false;
                         break;
                     }
+
+                    $logs = $respSap['logs'];
+                    $documentNumberSalesSap = '';
+                    foreach ($logs as $log) {
+                        if ($log['document_type'] == 'FI' && $log['status_code'] == 'S') {
+                            $messageSap = $log['message'];
+                            $messageSap = explode(' ', $messageSap);
+                            $documentNumberSalesSap = $messageSap[0];
+                        }
+                    }
+
+                    if($documentNumberSalesSap == ''){
+                        $postingSap = false;
+                        break;
+                    }
+                    $documentNumberSalesSaps[] = $documentNumberSalesSap;
+
+                    !dd($respSap['logs']);
 
                     $posRepository = Pos::getInstanceRepo($pos);
                     $initConnectionAloha = $posRepository->initConnectionDB();

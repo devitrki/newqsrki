@@ -35,6 +35,7 @@ class MaterialOutletController extends Controller
 
         $query = DB::table('material_outlets')
                     ->join('materials', 'materials.code', 'material_outlets.code')
+                    ->where('materials.company_id', $userAuth->company_id_selected)
                     ->where('material_outlets.company_id', $userAuth->company_id_selected)
                     ->select(['material_outlets.id', 'material_outlets.code', 'material_outlets.description',
                         'material_outlets.opname', 'material_outlets.opname_uom', 'material_outlets.waste',

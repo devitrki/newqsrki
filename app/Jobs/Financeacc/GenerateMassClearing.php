@@ -91,6 +91,7 @@ class GenerateMassClearing implements ShouldQueue
         $salesDates = MassClearingDetail::getSalesDate($massClearingDetail);
         $customerCodePlant = Plant::getCustomerCodeById($massClearingDetail->plant_id);
         $nominalPos = 0;
+        $documentNumberSalesSaps = [];
         $postingSap = true;
         $totalBankCharge = (int)$massClearingDetail->bank_in_charge;
         $totalBankIn = $massClearingDetail->bank_in_nominal + $totalBankCharge;
@@ -99,6 +100,8 @@ class GenerateMassClearing implements ShouldQueue
 
         // get nominal pos and doc number by sales date
         foreach ($salesDates as $salesDate) {
+            $nominalPosDate = 0;
+
             $dataUpload = [
                 'outlet_id' => $customerCodePlant,
                 'transaction_date' => $salesDate
@@ -108,7 +111,23 @@ class GenerateMassClearing implements ShouldQueue
             $sapResponse = $sapRepository->getTransactionLog($dataUpload);
             if ($sapResponse['status']) {
                 $respSap = $sapResponse['response'];
-                if (!$respSap['sales']['success']) {
+
+                if (!$respSap['success'] || !$respSap['logs']) {
+                    $postingSap = false;
+                    break;
+                }
+
+                $logs = $respSap['logs'];
+                $documentNumberSalesSap = '';
+                foreach ($logs as $log) {
+                    if ($log['document_type'] == 'FI' && $log['status_code'] == 'S') {
+                        $messageSap = $log['message'];
+                        $messageSap = explode(' ', $messageSap);
+                        $documentNumberSalesSap = $messageSap[0];
+                    }
+                }
+
+                if($documentNumberSalesSap == ''){
                     $postingSap = false;
                     break;
                 }
@@ -120,6 +139,8 @@ class GenerateMassClearing implements ShouldQueue
                     break;
                 }
 
+                $documentNumberSalesSaps[] = $documentNumberSalesSap;
+
                 $nominalPosDate = $posRepository->getTotalPaymentByMethodPayment($massClearingDetail->plant_id, $salesDate, $sapCode);
 
             } else {
@@ -130,7 +151,7 @@ class GenerateMassClearing implements ShouldQueue
             $nominalPos += $nominalPosDate;
         }
 
-        $documentNumber = '';
+        $documentNumber = implode(',', $documentNumberSalesSaps);
         $shortNamePlant = strtoupper(Plant::getShortNameById($massClearingDetail->plant_id, false));
         $selisih = abs($nominalPos - $totalBankIn);
         $selisihPercent = 0;
