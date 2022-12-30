@@ -114,6 +114,11 @@
                         'searchable' => 'true',
                         'orderable' => 'false',
                     ],[
+                        'label' => 'capitalized on',
+                        'data' => 'capitalized_on',
+                        'searchable' => 'true',
+                        'orderable' => 'false',
+                    ],[
                         'label' => 'cost center',
                         'data' => 'cost_center_desc',
                         'searchable' => 'false',
