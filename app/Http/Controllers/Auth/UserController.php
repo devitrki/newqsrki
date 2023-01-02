@@ -453,6 +453,8 @@ class UserController extends Controller
         $user = User::find(Auth::id());
         $user->password = Hash::make($request->new_password);
         if ($user->save()) {
+            Cache::forget('profile_by_user_id_'. $user->id);
+
             $stat = 'success';
             $msg = Lang::get("message.change_password.success");
         } else {
@@ -474,6 +476,8 @@ class UserController extends Controller
         $user->password = Hash::make($request->new_password);
         $user->flag_change_pass = 0;
         if ($user->save()) {
+            Cache::forget('profile_by_user_id_'. $user->id);
+
             $stat = 'success';
             $msg = Lang::get("message.change_password_monthly.success");
         } else {
