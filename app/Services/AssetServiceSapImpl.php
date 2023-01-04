@@ -71,7 +71,7 @@ class AssetServiceSapImpl implements AssetService
                     'cost_center' => $assetsap['cost_center_name'],
                     'cost_center_code' => $assetsap['cost_center_id'],
                     'remark' => $assetsap['remark'],
-                    'capitalized_on' => isset($assetsap['capitalized_on']) ? $assetsap['capitalized_on'] : null,
+                    'capitalized_on' => isset($assetsap['capitalized_on']) && $assetsap['capitalized_on'] != '' && $assetsap['capitalized_on'] != '0000-00-00' ? $assetsap['capitalized_on'] : null,
                     "created_at" =>  \Carbon\Carbon::now(), # new \Datetime()
                     "updated_at" => \Carbon\Carbon::now(),
                 ];
