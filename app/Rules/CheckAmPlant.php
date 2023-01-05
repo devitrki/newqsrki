@@ -3,18 +3,23 @@
 namespace App\Rules;
 
 use Illuminate\Contracts\Validation\Rule;
+use Illuminate\Support\Facades\Lang;
+
 use App\Models\Plant;
+use App\Models\Company;
 
 class CheckAmPlant implements Rule
 {
+    protected $companyId;
+
     /**
      * Create a new rule instance.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct($companyId)
     {
-        //
+        $this->companyId = $companyId;
     }
 
     /**
@@ -27,8 +32,16 @@ class CheckAmPlant implements Rule
     public function passes($attribute, $value)
     {
         $code = Plant::getCodeById($value);
+
         // except R100 Head Office Not Validate
-        if( $code == 'R100' ){
+        $plantCodeHO = Company::getConfigByKey($this->companyId, 'PLANT_CODE_HO');
+        if (!$plantCodeHO || $plantCodeHO == '') {
+            return false;
+        }
+
+        $plantCodeHO = explode(',', $plantCodeHO);
+
+        if( in_array($code, $plantCodeHO) ){
             return true;
         }
 

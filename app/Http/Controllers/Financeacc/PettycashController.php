@@ -184,8 +184,10 @@ class PettycashController extends Controller
 
     public function store(Request $request)
     {
+        $userAuth = $request->get('userAuth');
+
         $request->validate([
-                        'plant' => ['required', new CheckAmPlant],
+                        'plant' => ['required', new CheckAmPlant($userAuth->company_id_selected)],
                         'date' => 'required',
                         'type' => 'required'
                     ]);
@@ -285,8 +287,6 @@ class PettycashController extends Controller
         $type = $request->type;
 
         $lastItemId = 0;
-
-        $userAuth = $request->get('userAuth');
 
         DB::beginTransaction();
 

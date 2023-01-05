@@ -17,6 +17,7 @@ use App\Mail\Financeacc\Assets\NotificationRequestMutation;
 
 use App\Models\User;
 use App\Models\Plant;
+use App\Models\Company;
 use App\Models\Configuration;
 use App\Models\Financeacc\Asset;
 use App\Models\Financeacc\AssetMutation;
@@ -169,14 +170,22 @@ class AssetController extends Controller
 
     public function store(Request $request)
     {
+        $userAuth = $request->get('userAuth');
+
         $request->validate([
-            'plant_receiver' => ['required', new CheckAmPlant],
-            'plant_sender' => ['required', new CheckAmPlant],
+            'plant_receiver' => ['required', new CheckAmPlant($userAuth->company_id_selected)],
+            'plant_sender' => ['required', new CheckAmPlant($userAuth->company_id_selected)],
             'cost_center_receiver' => 'required',
             'qty_mutation' => 'required',
             'est_send_date' => 'required',
             'validator' => 'required',
         ]);
+
+        $plantCodeHO = Company::getConfigByKey($userAuth->company_id_selected, 'PLANT_CODE_HO');
+        if (!$plantCodeHO || $plantCodeHO == '') {
+            return false;
+        }
+        $plantCodeHO = explode(',', $plantCodeHO);
 
         // check level approve boss (first)
         $user = User::find(Auth::id());
@@ -248,7 +257,7 @@ class AssetController extends Controller
         if( $typePlantFrom == 'Outlet' && $typePlantTo == 'DC' ){
 
             // flag receive is HO
-            if( $codePlantTo == 'R100' ){
+            if( in_array($codePlantTo, $plantCodeHO) ){
                 // check bahwa requestor harus AM Pengirim / AM Outlet
                 if($requestor != 'AM Sender'){
                     $stat = 'failed';
@@ -313,8 +322,7 @@ class AssetController extends Controller
         }
 
         if( $typePlantFrom == 'DC' && $typePlantTo == 'DC'){
-
-            if( $codePlantFrom != 'R100' && $codePlantTo != 'R100' ){
+            if( !in_array($codePlantFrom, $plantCodeHO) && !in_array($codePlantTo, $plantCodeHO) ){
                 // DC -> DC
 
                 // check bahwa requestor harus AM Penerima
@@ -334,7 +342,7 @@ class AssetController extends Controller
                 $adminDepartReceiver = AssetAdminDepart::getAdminDepart($request->plant_receiver, $request->cost_center_code_receiver);
                 $hodDepartReceiver = AssetAdminDepart::getHODDepart($request->plant_receiver, $request->cost_center_code_receiver);
 
-                if( $codePlantFrom == 'R100' && $codePlantTo != 'R100'){
+                if( in_array($codePlantFrom, $plantCodeHO) && !in_array($codePlantTo, $plantCodeHO)){
                     // HO -> DC
 
                     if( $adminDepartSender == '0' ){
@@ -365,7 +373,7 @@ class AssetController extends Controller
                     $senderCostCenter = 'Admin Department Sender';
                     $senderCostCenterId = $adminDepartSender;
 
-                } else if( $codePlantFrom != 'R100' && $codePlantTo == 'R100'){
+                } else if( !in_array($codePlantFrom, $plantCodeHO) && in_array($codePlantTo, $plantCodeHO)){
                     // DC -> HO
                     if( $adminDepartReceiver == '0' ){
                         $stat = 'failed';
@@ -455,7 +463,7 @@ class AssetController extends Controller
         if( $typePlantFrom == 'DC' && $typePlantTo == 'Outlet'){
 
             // flag if send from HO
-            if( $codePlantFrom == 'R100' ){
+            if( in_array($codePlantFrom, $plantCodeHO)){
 
                 if( !in_array($requestor, ['Admin Department', 'AM Receiver']) ){
                     $stat = 'failed';
@@ -595,9 +603,11 @@ class AssetController extends Controller
 
     public function storeRequest(Request $request)
     {
+        $userAuth = $request->get('userAuth');
+
         $request->validate([
-            'plant_sender' => ['required', new CheckAmPlant],
-            'plant_receiver' => ['required', new CheckAmPlant],
+            'plant_sender' => ['required', new CheckAmPlant($userAuth->company_id_selected)],
+            'plant_receiver' => ['required', new CheckAmPlant($userAuth->company_id_selected)],
             'cost_center_receiver' => 'required',
             'validator' => 'required',
             'qty_mutation' => 'required',
