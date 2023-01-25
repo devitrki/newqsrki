@@ -118,9 +118,10 @@
                         'orderable' => 'false',
                     ],[
                         'label' => 'opname date',
-                        'data' => 'date_desc',
+                        'data' => 'date',
                         'searchable' => 'true',
                         'orderable' => 'false',
+                        'format' => 'date',
                     ],[
                         'label' => 'pic',
                         'data' => 'pic',
@@ -128,9 +129,10 @@
                         'orderable' => 'false',
                     ],[
                         'label' => 'create date',
-                        'data' => 'create_date',
+                        'data' => 'created_at',
                         'searchable' => 'false',
                         'orderable' => 'false',
+                        'format' => 'datetime',
                     ],[
                         'label' => 'pic update',
                         'data' => 'pic_update',
@@ -141,11 +143,13 @@
                         'data' => 'update_date',
                         'searchable' => 'false',
                         'orderable' => 'false',
+                        'format' => 'datetime',
                     ],[
                         'label' => 'posting date',
                         'data' => 'posting_date',
                         'searchable' => 'false',
                         'orderable' => 'false',
+                        'format' => 'postingdate',
                     ]];
             @endphp
             <x-datatable-serverside :dom="$dom" compid="tabledata" :tabmenu="$menu_id" :columns="$columns" url="inventory/opname/dtble?plant-id={{ $first_plant_id }}&from={{ date('Y/m/d', strtotime('-30 days')) }}&until={{ date('Y/m/d') }}" :select="[true, 'single']" />

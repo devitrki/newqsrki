@@ -123,9 +123,10 @@
                         'orderable' => 'false',
                     ],[
                         'label' => 'Deposit Date',
-                        'data' => 'deposit_date_desc',
+                        'data' => 'deposit_date',
                         'searchable' => 'false',
                         'orderable' => 'false',
+                        'format' => 'date',
                     ],[
                         'label' => 'Richeese Bank',
                         'data' => 'richeese_bank',

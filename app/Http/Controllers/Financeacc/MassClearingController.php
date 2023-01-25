@@ -54,15 +54,6 @@ class MassClearingController extends Controller
                             $sql = "profiles.name like ?";
                             $query->whereRaw($sql, ["%{$keyword}%"]);
                         })
-                        ->addColumn('time_process_start_desc', function ($data) {
-                            return ($data->time_process_start != '' && $data->time_process_start != null ) ? Helper::DateConvertFormat($data->time_process_start, 'Y-m-d H:i:s', 'd-m-Y H:i:s') : '-';
-                        })
-                        ->addColumn('time_process_finish_desc', function ($data) {
-                            return ($data->time_process_finish != '' && $data->time_process_finish != null ) ? Helper::DateConvertFormat($data->time_process_finish, 'Y-m-d H:i:s', 'd-m-Y H:i:s') : '-';
-                        })
-                        ->addColumn('upload_time', function ($data) {
-                            return ($data->created_at != '' && $data->created_at != null ) ? Helper::DateConvertFormat($data->created_at, 'Y-m-d H:i:s', 'd-m-Y H:i:s') : '-';
-                        })
                         ->addColumn('status_generate_desc', function ($data) {
                             if( $data->status_generate == 0 ){
                                 $status = "<div class = 'badge badge-warning'>Waiting</div>";

@@ -72,12 +72,6 @@ class GiPlantController extends Controller
                 ->addColumn('receiving_plant', function ($data) {
                     return $data->receiving_plant_initital . ' ' . $data->receiving_plant_name;
                 })
-                ->addColumn('date_desc', function ($data) {
-                    return date("d-m-Y", strtotime($data->date));
-                })
-                ->orderColumn('date_desc', function ($query, $order) {
-                    $query->orderBy('date', $order);
-                })
                 ->make();
     }
 

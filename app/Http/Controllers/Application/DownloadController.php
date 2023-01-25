@@ -31,10 +31,6 @@ class DownloadController extends Controller
 
         return Datatables::of($query)
                 ->addIndexColumn()
-                ->addColumn('date', function ($data) {
-                    $created_at = Carbon::createFromFormat('Y-m-d H:i:s', $data->created_at);
-                    return $created_at->format('d/m/Y H:i:s');
-                })
                 ->make();
     }
 

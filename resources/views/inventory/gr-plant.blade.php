@@ -80,9 +80,10 @@
                             ],
                             [
                                 'label' => 'Receive Date',
-                                'data' => 'date_desc',
+                                'data' => 'date',
                                 'orderable' => 'true',
                                 'searchable' => 'false',
+                                'format' => 'date',
                             ],
                             [
                                 'label' => 'receiving plant',

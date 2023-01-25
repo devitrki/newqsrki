@@ -56,9 +56,10 @@
                 $columns =
                     [[
                         'label' => 'mutation date',
-                        'data' => 'date_desc',
+                        'data' => 'date',
                         'searchable' => 'false',
                         'orderable' => 'false',
+                        'format' => 'date',
                     ],[
                         'label' => 'Vendor Sender',
                         'data' => 'vendor_sender_name',

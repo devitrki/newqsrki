@@ -61,9 +61,6 @@ class UoGoodReceiptController extends Controller
 
         return Datatables::of($query)
                 ->addIndexColumn()
-                ->addColumn('date_desc', function ($data) {
-                    return date("d-m-Y", strtotime($data->date));
-                })
                 ->addColumn('status_reverse', function ($data) {
                     if($data->is_reverse != 0){
                         $reverseId = UoMovement::getDocumentNumberReverse($data->reverse_id);

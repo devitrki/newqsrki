@@ -68,12 +68,6 @@ class GrVendorController extends Controller
 
         return Datatables::of($query)
                 ->addIndexColumn()
-                ->addColumn('posting_date_desc', function ($data) {
-                    return date("d-m-Y", strtotime($data->posting_date));
-                })
-                ->orderColumn('posting_date_desc', function ($query, $order) {
-                    $query->orderBy('gr_vendors.posting_date', $order);
-                })
                 ->addColumn('plant_desc', function ($data) {
                     return $data->initital . ' ' . $data->short_name;
                 })

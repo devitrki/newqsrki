@@ -55,19 +55,22 @@
                         'orderable' => 'false',
                     ],[
                         'label' => 'upload time',
-                        'data' => 'upload_time',
+                        'data' => 'created_at',
                         'searchable' => 'false',
                         'orderable' => 'false',
+                        'format' => 'datetime'
                     ],[
                         'label' => 'start process time',
-                        'data' => 'time_process_start_desc',
+                        'data' => 'time_process_start',
                         'searchable' => 'false',
                         'orderable' => 'false',
+                        'format' => 'datetime'
                     ],[
                         'label' => 'finish process time',
-                        'data' => 'time_process_finish_desc',
+                        'data' => 'time_process_finish',
                         'searchable' => 'false',
                         'orderable' => 'false',
+                        'format' => 'datetime'
                     ],[
                         'label' => 'status generate',
                         'data' => 'status_generate_desc',

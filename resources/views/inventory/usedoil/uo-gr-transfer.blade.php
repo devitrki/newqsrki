@@ -68,9 +68,10 @@
                         'orderable' => 'false',
                     ],[
                         'label' => 'document date',
-                        'data' => 'date_desc',
+                        'data' => 'date',
                         'searchable' => 'false',
                         'orderable' => 'false',
+                        'format' => 'date',
                     ],[
                         'label' => 'dc',
                         'data' => 'plant_receiver',

@@ -45,7 +45,8 @@
                         'data' => 'status',
                     ],[
                         'label' => 'date',
-                        'data' => 'date',
+                        'data' => 'created_at',
+                        'format' => 'datetime'
                     ]];
             @endphp
             <x-datatable-serverside :dom="$dom" compid="tabledata" :tabmenu="$menu_id" :columns="$columns" url="application/download/dtble" :select="[true, 'single']" />

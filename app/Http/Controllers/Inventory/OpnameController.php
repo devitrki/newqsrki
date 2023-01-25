@@ -97,9 +97,6 @@ class OpnameController extends Controller
                             return '<i class="bx bx-x text-danger"></i>';
                         }
                     })
-                    ->addColumn('date_desc', function ($data) {
-                        return date("d-m-Y", strtotime($data->date));
-                    })
                     ->addColumn('document_number_desc', function ($data) {
                         if( $data->document_number != '' ){
                             return $data->document_number;
@@ -113,24 +110,6 @@ class OpnameController extends Controller
                         } else {
                             return '-';
                         }
-                    })
-                    ->addColumn('update_date', function ($data) {
-                        if( $data->update != 0 ){
-                            return date("d-m-Y H:i:s", strtotime($data->update_date));
-                        } else {
-                            return '-';
-                        }
-                    })
-                    ->addColumn('create_date', function ($data) {
-                        return date("d-m-Y H:i:s", strtotime($data->created_at));
-                    })
-                    ->editColumn('posting_date', function ($data) {
-                        if( $data->submit != 0 ){
-                            return date("d-m-Y H:i:s", strtotime($data->posting_date));
-                        } else {
-                            return '-';
-                        }
-
                     })
                     ->rawColumns(['submit_desc', 'update_desc'])
                     ->make();

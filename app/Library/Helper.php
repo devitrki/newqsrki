@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Lang;
 use DateTime;
 
+use App\Models\Company;
+
 class Helper
 {
     /**
@@ -88,6 +90,27 @@ class Helper
         $date = Carbon::createFromFormat($format1, $date);
 
         return $date->format($format2);
+    }
+
+    /**
+     * Function to convert from format to format with tz
+     * @return boolean
+     * By Yudha Permana
+     */
+    public static function DateConvertFormatTz( $date, $format1, $tz, $format2, $companyId )
+    {
+        $tzCompany = Company::getConfigByKey($companyId, 'TIMEZONE');
+        if (!$tzCompany) {
+            $tzCompany = 'Asia/Jakarta';
+        }
+
+        if (!$tz) {
+            $tz = 'UTC';
+        }
+
+        $date = Carbon::createFromFormat($format1, $date, $tz);
+
+        return $date->setTimezone($tzCompany)->format($format2);
     }
 
     /**

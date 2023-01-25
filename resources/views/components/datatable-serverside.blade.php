@@ -47,7 +47,32 @@
                     @isset( $col["format"] )
                     @if( $col["format"] == 'datetime' )
                     render: function (data, type, row, meta) {
-                        return moment.utc(data).local().format('DD/MM/YYYY HH:mm:ss');
+                        if (data) {
+                            return moment.utc(data).local().format('DD/MM/YYYY HH:mm:ss');
+                        } else {
+                            return '';
+                        }
+
+                    }
+                    @endif
+                    @if( $col["format"] == 'date' )
+                    render: function (data, type, row, meta) {
+                        if (data) {
+                            return moment.utc(data).local().format('DD/MM/YYYY');
+                        } else {
+                            return '';
+                        }
+
+                    }
+                    @endif
+                    @if( $col["format"] == 'postingdate' )
+                    render: function (data, type, row, meta) {
+                        if (data && row.submit != 0) {
+                            return moment.utc(data).local().format('DD/MM/YYYY HH:mm:ss');
+                        } else {
+                            return '';
+                        }
+
                     }
                     @endif
                     @endisset

@@ -45,9 +45,6 @@ class UoMutationSaldoController extends Controller
 
         return Datatables::of($query)
                     ->addIndexColumn()
-                    ->addColumn('date_desc', function ($data) {
-                        return date("d-m-Y", strtotime($data->date));
-                    })
                     ->addColumn('nominal_desc', function ($data) {
                         return Helper::convertNumberToInd($data->nominal, 'Rp ', 0);
                     })

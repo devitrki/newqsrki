@@ -113,34 +113,40 @@
                         'orderable' => 'false',
                     ],[
                         'label' => 'est transfer date',
-                        'data' => 'date_send_est_desc',
+                        'data' => 'date_send_est',
                         'searchable' => 'false',
                         'orderable' => 'false',
+                        'format' => 'date'
                     ],[
                         'label' => 'request date',
-                        'data' => 'date_request_desc',
+                        'data' => 'date_request',
                         'searchable' => 'false',
                         'orderable' => 'false',
+                        'format' => 'datetime',
                     ],[
                         'label' => 'approve 1 date',
-                        'data' => 'date_approve_first_desc',
+                        'data' => 'date_approve_first',
                         'searchable' => 'false',
                         'orderable' => 'false',
+                        'format' => 'datetime',
                     ],[
                         'label' => 'confirm validator date',
-                        'data' => 'date_confirmation_validator_desc',
+                        'data' => 'date_confirmation_validator',
                         'searchable' => 'false',
                         'orderable' => 'false',
+                        'format' => 'datetime',
                     ],[
                         'label' => 'approve 2 date',
-                        'data' => 'date_approve_second_desc',
+                        'data' => 'date_approve_second',
                         'searchable' => 'false',
                         'orderable' => 'false',
+                        'format' => 'datetime',
                     ],[
                         'label' => 'confirm sender date',
-                        'data' => 'date_confirmation_sender_desc',
+                        'data' => 'date_confirmation_sender',
                         'searchable' => 'false',
                         'orderable' => 'false',
+                        'format' => 'datetime',
                     ],[
                         'label' => 'condition asset transfer',
                         'data' => 'condition_send',
@@ -148,9 +154,10 @@
                         'orderable' => 'false',
                     ],[
                         'label' => 'accepted receiver date',
-                        'data' => 'date_accept_receiver_desc',
+                        'data' => 'date_accept_receiver',
                         'searchable' => 'false',
                         'orderable' => 'false',
+                        'format' => 'datetime',
                     ],[
                         'label' => 'condition asset receive',
                         'data' => 'condition_receive',

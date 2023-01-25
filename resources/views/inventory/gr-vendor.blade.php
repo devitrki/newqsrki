@@ -80,9 +80,10 @@
                             ],
                             [
                                 'label' => 'Posting Date',
-                                'data' => 'posting_date_desc',
+                                'data' => 'posting_date',
                                 'orderable' => 'true',
                                 'searchable' => 'false',
+                                'format' => 'date',
                             ],
                             [
                                 'label' => 'Plant',

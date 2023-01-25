@@ -93,9 +93,6 @@ class UoDepositController extends Controller
                         return '<i class="bx bxs-x-circle text-danger"></i>';
                     }
                 })
-                ->addColumn('deposit_date_desc', function ($data) {
-                    return date("d-m-Y", strtotime($data->deposit_date));
-                })
                 ->addColumn('deposit_nominal_desc', function ($data) {
                     return Helper::convertNumberToInd($data->deposit_nominal, 'Rp ', 0);
                 })

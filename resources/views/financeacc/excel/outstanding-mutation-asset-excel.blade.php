@@ -61,12 +61,12 @@
             <td>{{ App\Models\User::getNameById($item->level_request_first_id) . ' (' . $item->level_request_first . ')' }}</td>
             <td>{{ App\Models\Financeacc\AssetValidator::getNameById($item->asset_validator_id) }}</td>
             <td>{{ App\Models\User::getNameById($item->level_request_second_id) . ' (' . $item->level_request_second . ')' }}</td>
-            <td>{{ ($item->date_send_est != '' && $item->date_send_est != null) ? App\Library\Helper::DateConvertFormat($item->date_send_est, 'Y-m-d H:i:s', 'd-m-Y H:i:s') : '-' }}</td>
-            <td>{{ ($item->date_request != '' && $item->date_request != null) ? App\Library\Helper::DateConvertFormat($item->date_request, 'Y-m-d H:i:s', 'd-m-Y H:i:s') : '-' }}</td>
-            <td>{{ ($item->date_approve_first != '' && $item->date_approve_first != null) ? App\Library\Helper::DateConvertFormat($item->date_approve_first, 'Y-m-d H:i:s', 'd-m-Y H:i:s') : '-' }}</td>
-            <td>{{ ($item->date_confirmation_validator != '' && $item->date_confirmation_validator != null) ? App\Library\Helper::DateConvertFormat($item->date_confirmation_validator, 'Y-m-d H:i:s', 'd-m-Y H:i:s') : '-' }}</td>
-            <td>{{ ($item->date_approve_second != '' && $item->date_approve_second != null) ? App\Library\Helper::DateConvertFormat($item->date_approve_second, 'Y-m-d H:i:s', 'd-m-Y H:i:s') : '-' }}</td>
-            <td>{{ ($item->date_confirmation_sender != '' && $item->date_confirmation_sender != null) ? App\Library\Helper::DateConvertFormat($item->date_confirmation_sender, 'Y-m-d H:i:s', 'd-m-Y H:i:s') : '-' }}</td>
+            <td>{{ ($item->date_send_est != '' && $item->date_send_est != null) ? App\Library\Helper::DateConvertFormat($item->date_send_est, 'Y-m-d H:i:s', 'd-m-Y') : '-' }}</td>
+            <td>{{ ($item->date_request != '' && $item->date_request != null) ? App\Library\Helper::DateConvertFormatTz($item->date_request, 'Y-m-d H:i:s', 'UTC', 'd-m-Y H:i:s', $item->company_id) : '-' }}</td>
+            <td>{{ ($item->date_approve_first != '' && $item->date_approve_first != null) ? App\Library\Helper::DateConvertFormatTz($item->date_approve_first, 'Y-m-d H:i:s', 'UTC', 'd-m-Y H:i:s', $item->company_id) : '-' }}</td>
+            <td>{{ ($item->date_confirmation_validator != '' && $item->date_confirmation_validator != null) ? App\Library\Helper::DateConvertFormatTz($item->date_confirmation_validator, 'Y-m-d H:i:s', 'UTC', 'd-m-Y H:i:s', $item->company_id) : '-' }}</td>
+            <td>{{ ($item->date_approve_second != '' && $item->date_approve_second != null) ? App\Library\Helper::DateConvertFormatTz($item->date_approve_second, 'Y-m-d H:i:s', 'UTC', 'd-m-Y H:i:s', $item->company_id) : '-' }}</td>
+            <td>{{ ($item->date_confirmation_sender != '' && $item->date_confirmation_sender != null) ? App\Library\Helper::DateConvertFormatTz($item->date_confirmation_sender, 'Y-m-d H:i:s', 'UTC', 'd-m-Y H:i:s', $item->company_id) : '-' }}</td>
             <td>{{ $item->note_request }}</td>
         </tr>
         @endforeach

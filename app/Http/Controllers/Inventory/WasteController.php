@@ -89,17 +89,6 @@ class WasteController extends Controller
                             return '-';
                         }
                     })
-                    ->addColumn('create_date', function ($data) {
-                        return date("d-m-Y H:i:s", strtotime($data->created_at));
-                    })
-                    ->editColumn('posting_date', function ($data) {
-                        if( $data->submit != 0 ){
-                            return date("d-m-Y H:i:s", strtotime($data->posting_date));
-                        } else {
-                            return '-';
-                        }
-
-                    })
                     ->rawColumns(['submit_desc'])
                     ->make();
     }
