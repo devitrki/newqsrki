@@ -27,6 +27,14 @@ class PettycashServiceSapImpl implements PettycashService
             ];
         }
 
+        $currencyComp = Company::getConfigByKey($companyId, 'CURRENCY');
+        if (!$currencyComp || $currencyComp == '') {
+            return [
+                "status" => false,
+                "message" => Lang::get("Please set CURRENCY in company configuration")
+            ];
+        }
+
         $status = true;
         $message = Lang::get('Successfully Posted');
 
@@ -132,6 +140,7 @@ class PettycashServiceSapImpl implements PettycashService
                 'posting_date' => date("Y-m-d"),
                 'reference' => $ref,
                 'invoice_amount' => $total,
+                'currency_id' => $currencyComp,
                 'header_text' => $desc_trans,
                 'items' => $dataSubmited
             ];
