@@ -140,8 +140,8 @@ class PettycashServiceSapImpl implements PettycashService
                 'posting_date' => date("Y-m-d"),
                 'reference' => $ref,
                 'invoice_amount' => $total,
-                'currency_id' => $currencyComp,
                 'header_text' => $desc_trans,
+                'currency_id' => $currencyComp,
                 'items' => $dataSubmited
             ];
 
