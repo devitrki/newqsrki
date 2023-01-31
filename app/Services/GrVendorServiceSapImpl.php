@@ -111,7 +111,7 @@ class GrVendorServiceSapImpl implements GrVendorService
                 [
                     'po_item' => $request->item_number,
                     'movement_type_id' => '',
-                    'material_id' => $request->material_code,
+                    'material_id' => $request->material_code ? $request->material_code : '',
                     'qty_entry' => (float)$request->qty_gr,
                     'receiver' => $request->recepient,
                     'sloc_id' => Plant::getSlocIdGrVendor($request->plant_id),
