@@ -20,6 +20,17 @@ class Pos extends Model implements Auditable
     }
 
     // utility
+    public static function getIdByCode($companyId, $code)
+    {
+        $pos = DB::table('pos')
+                ->where('company_id', $companyId)
+                ->where('code', 'like', '%' . $code . '%')
+                ->select('id')
+                ->first();
+
+        return $pos ? $pos->id : '0';
+    }
+
     public static function getConfigByKey($posId, $key)
     {
         $value = '';
@@ -37,12 +48,12 @@ class Pos extends Model implements Auditable
     public static function getConfigs($posId)
     {
         $configurations = Cache::rememberForever('pos_configuration_id_' . $posId, function () use ($posId) {
-            $company = DB::table('pos')
+            $pos = DB::table('pos')
                         ->where('id', $posId)
                         ->select('configurations')
                         ->first();
 
-            return $company->configurations;
+            return $pos->configurations;
         });
 
         return $configurations;

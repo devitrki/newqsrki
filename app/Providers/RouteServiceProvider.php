@@ -60,6 +60,10 @@ class RouteServiceProvider extends ServiceProvider
                 ->group(base_path('routes/modules/tax.php'));
 
             Route::middleware('web', 'auth', 'verified')
+                ->prefix('interfaces')
+                ->group(base_path('routes/modules/interfaces.php'));
+
+            Route::middleware('web', 'auth', 'verified')
                 ->prefix('report')
                 ->group(base_path('routes/modules/report.php'));
         });

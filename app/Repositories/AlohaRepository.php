@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Models\Company;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Config;
 
@@ -9,6 +10,7 @@ use App\Models\Pos;
 use App\Models\Plant;
 use App\Models\Material;
 use App\Models\PaymentPos;
+use App\Models\OrderModePos;
 
 class AlohaRepository implements PosRepository{
     public $posId;
@@ -997,5 +999,743 @@ class AlohaRepository implements PosRepository{
         }
 
         return $items;
+    }
+
+    public function getStoreAloha($dateFrom, $dateUntil, $plantCode = null)
+    {
+        $query = DB::connection($this->connectionName)
+                    ->table('dpvHstGndItem')
+                    ->leftJoin('gblStore', 'gblStore.storeID', 'dpvHstGndItem.FKStoreId')
+                    ->whereBetween('dpvHstGndItem.DateOfBusiness', [$dateFrom, $dateUntil])
+                    ->where('gblStore.FKRegionId', 2)
+                    ->select('dpvHstGndItem.DateOfBusiness', 'gblStore.SecondaryStoreID' )
+                    ->groupBy('dpvHstGndItem.DateOfBusiness', 'gblStore.SecondaryStoreID');
+
+        if( $plantCode && $plantCode != ''){
+            $query = $query->where('gblStore.SecondaryStoreID', $plantCode);
+        }
+
+        return $query->get();
+    }
+
+    public function getSalesFormatSAP($customerCode, $date)
+    {
+        $salesInventory = $this->getSalesInventory($customerCode, $date);
+
+        return [
+            'payment' => $this->getPaymentSales($customerCode, $date),
+            'sales' => $salesInventory['sales'],
+            'inventory' => $salesInventory['inventories']
+        ];
+    }
+
+    public function getPaymentSales($customerCode, $date)
+    {
+        $pos = DB::table('pos')
+                ->where('id', $this->posId)
+                ->select('company_id')
+                ->first();
+
+        $taxMultiplication = Company::getConfigByKey($pos->company_id, 'TAX_MULTIPLICATION');
+
+        $payments = DB::connection($this->connectionName)
+                        ->select( DB::raw("
+                            SELECT pl.DateOfBusiness, pl.DocumentType, pl.Periode, pl.StoreName, pl.TotalAmount, pl.AccountStore FROM
+                            (
+                                SELECT
+                                    a.DateOfBusiness,
+                                    CASE
+                                        WHEN b.UserNumber >= 1 AND b.UserNumber <= 8 THEN 'DZ'
+                                        WHEN b.UserNumber >= 101 AND b.UserNumber <= 109 THEN 'DF'
+                                        WHEN b.UserNumber = 302 THEN 'DC'
+                                        WHEN b.UserNumber = 301 THEN 'DD'
+                                        WHEN b.UserNumber = 303 THEN 'DO'
+                                        WHEN b.UserNumber = 304 THEN 'DB'
+                                        WHEN b.UserNumber = 305 THEN 'DV'
+                                        WHEN b.UserNumber = 306 THEN 'DS'
+                                        WHEN b.UserNumber = 307 THEN 'DH'
+                                        WHEN b.UserNumber = 308 THEN 'DA'
+                                        WHEN b.UserNumber = 309 THEN 'DM'
+                                        WHEN b.UserNumber = 311 THEN 'DU'
+                                        WHEN b.UserNumber = 312 THEN 'DE'
+                                        WHEN b.UserNumber = 401 THEN 'DG'
+                                        ELSE 'YY'
+                                    END AS DocumentType,
+                                    MONTH(a.DateOfBusiness) as Periode,
+                                    c.Name AS StoreName,
+                                    SUM
+                                    (
+                                        CASE
+                                            WHEN b.UserNumber = 401
+                                            THEN a.Amount * " . $taxMultiplication . "
+                                            ELSE a.Amount
+                                        END
+                                    ) AS TotalAmount,
+                                    c.SecondaryStoreID AS AccountStore,
+                                    CASE
+                                        WHEN b.UserNumber >= 1 AND b.UserNumber <= 8 THEN 1
+                                        WHEN b.UserNumber >= 101 AND b.UserNumber <= 109 THEN 4
+                                        WHEN b.UserNumber = 302 THEN 2
+                                        WHEN b.UserNumber = 301 THEN 3
+                                        WHEN b.UserNumber = 303 THEN 3
+                                        WHEN b.UserNumber = 304 THEN 3
+                                        WHEN b.UserNumber = 305 THEN 3
+                                        WHEN b.UserNumber = 306 THEN 3
+                                        WHEN b.UserNumber = 307 THEN 3
+                                        WHEN b.UserNumber = 308 THEN 3
+                                        WHEN b.UserNumber = 309 THEN 3
+                                        WHEN b.UserNumber = 311 THEN 3
+                                        WHEN b.UserNumber = 312 THEN 3
+                                        WHEN b.UserNumber = 401 THEN 4
+                                        ELSE 7
+                                    END AS SortDocType
+                                FROM RF_Datamart.dbo.dpvHstTender a
+                                LEFT JOIN RF_Datamart.dbo.Tender b ON a.FKTenderId = b.TenderId
+                                LEFT JOIN RF_Datamart.dbo.gblStore c ON a.FKstoreID = c.storeID
+                                WHERE c.SecondaryStoreID = :storeCode1 AND a.DateOfBusiness = :date1
+                                GROUP BY a.DateOfBusiness,
+                                            CASE
+                                                WHEN b.UserNumber >= 1 AND b.UserNumber <= 8 THEN 'DZ'
+                                                WHEN b.UserNumber >= 101 AND b.UserNumber <= 109 THEN 'DF'
+                                                WHEN b.UserNumber = 302 THEN 'DC'
+                                                WHEN b.UserNumber = 301 THEN 'DD'
+                                                WHEN b.UserNumber = 303 THEN 'DO'
+                                                WHEN b.UserNumber = 304 THEN 'DB'
+                                                WHEN b.UserNumber = 305 THEN 'DV'
+                                                WHEN b.UserNumber = 306 THEN 'DS'
+                                                WHEN b.UserNumber = 307 THEN 'DH'
+                                                WHEN b.UserNumber = 308 THEN 'DA'
+                                                WHEN b.UserNumber = 309 THEN 'DM'
+                                                WHEN b.UserNumber = 311 THEN 'DU'
+                                                WHEN b.UserNumber = 312 THEN 'DE'
+                                                WHEN b.UserNumber = 401 THEN 'DG'
+                                                ELSE 'YY'
+                                            END,
+                                            c.SecondaryStoreID,
+                                            c.Name,
+                                            CASE
+                                                WHEN b.UserNumber >= 1 AND b.UserNumber <= 8 THEN 1
+                                                WHEN b.UserNumber >= 101 AND b.UserNumber <= 109 THEN 4
+                                                WHEN b.UserNumber = 302 THEN 2
+                                                WHEN b.UserNumber = 301 THEN 3
+                                                WHEN b.UserNumber = 303 THEN 3
+                                                WHEN b.UserNumber = 304 THEN 3
+                                                WHEN b.UserNumber = 305 THEN 3
+                                                WHEN b.UserNumber = 306 THEN 3
+                                                WHEN b.UserNumber = 307 THEN 3
+                                                WHEN b.UserNumber = 308 THEN 3
+                                                WHEN b.UserNumber = 309 THEN 3
+                                                WHEN b.UserNumber = 311 THEN 3
+                                                WHEN b.UserNumber = 312 THEN 3
+                                                WHEN b.UserNumber = 401 THEN 4
+                                                ELSE 7
+                                            END
+
+                                UNION ALL
+                                SELECT
+                                    a.DateOfBusiness,
+                                    CASE
+                                    WHEN
+                                            b.UserNumber <> 401
+                                    THEN
+                                            'DW'
+                                    ELSE
+                                            'DG'
+                                    END AS DocumentType,
+                                    MONTH(a.DateOfBusiness) as Periode,
+                                    c.Name AS StoreName,
+                                    sum(a.Amount * " . $taxMultiplication . ") AS TotalAmount,
+                                    c.SecondaryStoreID AS AccountStore,
+                                    CASE
+                                    WHEN
+                                            b.UserNumber <> 401
+                                    THEN
+                                            5
+                                    ELSE
+                                            4
+                                    END AS SortDocType
+                                FROM RF_Datamart.dbo.dpvHstComp a
+                                LEFT JOIN RF_Datamart.dbo.Comp b ON a.FKCompId = b.CompId
+                                LEFT JOIN RF_Datamart.dbo.gblStore c ON a.FKstoreID = c.storeID
+                                WHERE c.SecondaryStoreID = :storeCode2 AND a.DateOfBusiness = :date2
+                                GROUP BY a.DateOfBusiness,
+                                            CASE
+                                            WHEN
+                                                    b.UserNumber <> 401
+                                            THEN
+                                                    'DW'
+                                            ELSE
+                                                    'DG'
+                                            END,
+                                            c.SecondaryStoreID,
+                                            CASE
+                                                WHEN b.UserNumber >= 1 AND b.UserNumber <= 8 THEN 1
+                                                WHEN b.UserNumber >= 101 AND b.UserNumber <= 109 THEN 4
+                                                WHEN b.UserNumber = 302 THEN 2
+                                                WHEN b.UserNumber = 301 THEN 3
+                                                WHEN b.UserNumber = 303 THEN 3
+                                                WHEN b.UserNumber = 304 THEN 3
+                                                WHEN b.UserNumber = 305 THEN 3
+                                                WHEN b.UserNumber = 306 THEN 3
+                                                WHEN b.UserNumber = 307 THEN 3
+                                                WHEN b.UserNumber = 308 THEN 3
+                                                WHEN b.UserNumber = 309 THEN 3
+                                                WHEN b.UserNumber = 311 THEN 3
+                                                WHEN b.UserNumber = 312 THEN 3
+                                                ELSE 7
+                                            END,
+                                            c.Name,
+                                            CASE
+                                            WHEN
+                                                    b.UserNumber <> 401
+                                            THEN
+                                                    5
+                                            ELSE
+                                                    4
+                                            END
+
+                                UNION ALL
+
+                                SELECT
+                                    a.DateOfBusiness,
+                                    'DW' AS DocumentType,
+                                    MONTH(a.DateOfBusiness) as Periode,
+                                    c.Name AS StoreName,
+                                    SUM(a.Amount * " . $taxMultiplication . ") AS TotalAmount,
+                                    c.SecondaryStoreID AS AccountStore,
+                                    4 AS SortDocType
+                                FROM RF_Datamart.dbo.dpvHstPromotion a
+                                LEFT JOIN RF_Datamart.dbo.gblStore c ON a.FKstoreID = c.storeID
+                                WHERE c.SecondaryStoreID = :storeCode3 and a.DateOfBusiness = :date3
+                                GROUP BY a.DateOfBusiness,
+                                            c.Name,
+                                            c.SecondaryStoreID
+                                ) pl
+                                WHERE PL.TotalAmount > 0
+                                ORDER BY pl.SortDocType
+                            "), [
+                                'storeCode1' => $customerCode,
+                                'date1' => $date,
+                                'storeCode2' => $customerCode,
+                                'date2' => $date,
+                                'storeCode3' => $customerCode,
+                                'date3' => $date,
+                            ]);
+
+        $data = [];
+        $compCode = Company::getConfigByKey($pos->company_id, 'SAP_CODE');
+
+        foreach ($payments as $payment) {
+            $data[] = [
+                'COL01' => date("d:m:Y", strtotime($payment->DateOfBusiness)),
+                'COL02' => $payment->DocumentType,
+                'COL03' => str_pad($payment->Periode, 2, '0', STR_PAD_LEFT),
+                'COL04' => $compCode,
+                'COL05' => $payment->StoreName,
+                'COL06' => round($payment->TotalAmount, 2),
+                'COL07' => $payment->AccountStore,
+                'COL08' => '',
+                'COL09' => '',
+                'COL10' => '',
+                'COL11' => '',
+                'COL12' => '',
+                'COL13' => '',
+                'COL14' => '',
+                'COL15' => '',
+                'COL16' => ''
+            ];
+        }
+
+        return $data;
+    }
+
+    public function getSalesInventory($customerCode, $date)
+    {
+        $pos = DB::table('pos')
+                ->where('id', $this->posId)
+                ->select('company_id')
+                ->first();
+
+        $taxMultiplication = Company::getConfigByKey($pos->company_id, 'TAX_MULTIPLICATION');
+        $orderMode = OrderModePos::getQueryCondtionAloha($pos->company_id, 'c.Name');
+        $orderModeId = OrderModePos::getQueryCondtionAloha($pos->company_id, 'normcmb.SalesMode', 'id');
+
+        $transactions = DB::connection($this->connectionName)
+                        ->select( DB::raw("
+                        SELECT
+                            un.SecondaryStoreID,
+                            un.DateOfBusiness,
+                            un.ShortName,
+                            un.BohName,
+                            SUM(un.Quantity) AS Quantity,
+                            SUM(un.GrossSales) AS GrossSales,
+                            SUM(un.Discount) AS Discount,
+                            SUM(un.NettoSales) AS NettoSales,
+                            SUM(un.Tax) AS Tax,
+                            un.ItemType,
+                            un.SalesMode
+                        FROM
+                        (
+                        SELECT
+                            aln.SecondaryStoreID,
+                            aln.DateOfBusiness,
+                            aln.ShortName,
+                            aln.BohName,
+                            aln.Quantity,
+                            aln.GrossSales,
+                            aln.Discount,
+                            aln.NettoSales,
+                            aln.Tax,
+                            aln.ItemType,
+                            aln.SalesMode
+                        FROM
+                        (
+                        SELECT
+                            d.SecondaryStoreID,
+                            a.DateOfBusiness,
+                            b.ShortName,
+                            b.BohName,
+                            sum(
+                                CASE
+                                WHEN
+                                    a.Type = 1
+                                THEN
+                                    a.Quantity * -1
+                                ELSE
+                                    a.Quantity
+                                END
+                            ) AS Quantity,
+                            SUM(a.Price * " . $taxMultiplication . ") AS GrossSales,
+                            0 AS Discount,
+                            sum(a.Price) AS NettoSales,
+                            SUM(a.Price * 0.1) AS Tax,
+                            CASE
+                            WHEN
+                                a.ParentId <> 0
+                            THEN
+                                'ERLA'
+                            ELSE
+                                'NORM'
+                            END AS ItemType,"
+                            . $orderMode . " AS SalesMode
+                        FROM RF_Datamart.dbo.dpvHstGndItem a
+                        LEFT JOIN RF_Datamart.dbo.Item b ON a.FKItemId = b.ItemId
+                        LEFT JOIN RF_Datamart.dbo.OrderMode c ON a.FKOrderModeId = c.OrderModeId
+                        LEFT JOIN RF_Datamart.dbo.gblStore d ON a.FKstoreID = d.storeID
+                        WHERE a.QSQuickComboID = 0 AND d.SecondaryStoreID = :storeCode1 AND a.DateOfBusiness = :date1
+                        GROUP BY d.SecondaryStoreID,
+                                    a.DateOfBusiness,
+                                    b.ShortName,
+                                    b.BohName,
+                                    CASE
+                                    WHEN
+                                        a.ParentId <> 0
+                                    THEN
+                                        'ERLA'
+                                    ELSE
+                                        'NORM'
+                                    END,"
+                                    . $orderMode . "
+                        ) aln
+                        UNION ALL
+                        SELECT
+                            ale.SecondaryStoreID,
+                            ale.DateOfBusiness,
+                            ale.ShortName,
+                            ale.BohName,
+                            ale.Quantity,
+                            ale.GrossSales,
+                            ale.Discount,
+                            ale.NettoSales,
+                            ale.Tax,
+                            ale.ItemType,
+                            ale.SalesMode
+                        FROM
+                        (
+                        SELECT
+                            d.SecondaryStoreID,
+                            a.DateOfBusiness,
+                            b.ShortName,
+                            b.BohName,
+                            sum(
+                                CASE
+                                WHEN
+                                    a.Type = 1
+                                THEN
+                                    a.Quantity * -1
+                                ELSE
+                                    a.Quantity
+                                END
+                            ) AS Quantity,
+                            0 AS GrossSales,
+                            0 AS Discount,
+                            0 AS NettoSales,
+                            0 AS Tax,
+                            CASE
+                            WHEN
+                                a.ParentId = 0
+                            THEN
+                                'ERLA'
+                            ELSE
+                                'NORM'
+                            END AS ItemType,"
+                            . $orderMode . " AS SalesMode
+                        FROM RF_Datamart.dbo.dpvHstGndItem a
+                        LEFT JOIN RF_Datamart.dbo.Item b ON a.FKItemId = b.ItemId
+                        LEFT JOIN RF_Datamart.dbo.OrderMode c ON a.FKOrderModeId = c.OrderModeId
+                        LEFT JOIN RF_Datamart.dbo.gblStore d ON a.FKstoreID = d.storeID
+                        WHERE a.QSQuickComboID = 0 AND a.ParentId = 0 AND b.ExportId <> 1 AND d.SecondaryStoreID = :storeCode2 AND a.DateOfBusiness = :date2
+                        GROUP BY d.SecondaryStoreID,
+                                    a.DateOfBusiness,
+                                    b.ShortName,
+                                    b.BohName,
+                                    CASE
+                                    WHEN
+                                        a.ParentId = 0
+                                    THEN
+                                        'ERLA'
+                                    ELSE
+                                        'NORM'
+                                    END,"
+                                    . $orderMode . "
+                        ) ale
+                        UNION ALL
+
+                        SELECT
+                            cmberla.SecondaryStoreID,
+                            cmberla.DateOfBusiness,
+                            cmberla.ShortName,
+                            cmberla.BohName,
+                            cmberla.Quantity,
+                            cmberla.GrossSales,
+                            cmberla.Discount,
+                            cmberla.NettoSales,
+                            cmberla.Tax,
+                            cmberla.ItemType,
+                            cmberla.SalesMode
+                        FROM
+                        (
+                        SELECT
+                            d.SecondaryStoreID,
+                            a.DateOfBusiness,
+                            b.ShortName,
+                            b.BohName AS BohName,
+                            sum(
+                                CASE
+                                WHEN
+                                    a.Type = 1
+                                THEN
+                                    a.Quantity * -1
+                                ELSE
+                                    a.Quantity
+                                END
+                            ) AS Quantity,
+                            0 AS GrossSales,
+                            0 AS Discount,
+                            0 AS NettoSales,
+                            0 AS Tax,
+                            'ERLA' AS ItemType,"
+                            . $orderMode . " AS SalesMode
+                        FROM RF_Datamart.dbo.dpvHstGndItem a
+                        LEFT JOIN RF_Datamart.dbo.Item b ON a.FKItemId = b.ItemId
+                        LEFT JOIN RF_Datamart.dbo.OrderMode c ON a.FKOrderModeId = c.OrderModeId
+                        LEFT JOIN RF_Datamart.dbo.gblStore d ON a.FKstoreID = d.storeID
+                        LEFT JOIN RF_Datamart.dbo.QuickComboPromotion e ON a.QSQuickComboID = e.FKPromotionID AND a.FKstoreID = e.FKstoreID
+                        LEFT JOIN RF_Datamart.dbo.Promotion f ON a.QSQuickComboID = f.PromotionID
+                        WHERE a.QSQuickComboID <> 0 AND b.BohName <> '9999999' AND d.SecondaryStoreID = :storeCode3 AND b.ExportId <> 1 AND a.DateOfBusiness = :date3
+                        GROUP BY d.SecondaryStoreID,
+                                    a.DateOfBusiness,
+                                    b.ShortName,
+                                    b.BohName,"
+                                    . $orderMode . "
+                        ) cmberla
+
+                        UNION ALL
+
+                        SELECT normcmb.SecondaryStoreID,
+                                normcmb.DateOfBusiness,
+                                normcmb.ShortName,
+                                normcmb.BohName,
+                                SUM(normcmb.Quantity) AS Quantity,
+                                SUM(normcmb.NettoSales * " . $taxMultiplication . ") AS GrossSales,
+                                0 AS Discount,
+                                SUM(normcmb.NettoSales) AS NettoSales,
+                                SUM(normcmb.NettoSales * 0.1) AS Tax,
+                                normcmb.ItemType,"
+                                . $orderModeId . " AS SalesMode
+                        FROM (
+                            SELECT
+                                d.SecondaryStoreID,
+                                a.DateOfBusiness,
+                                f.name AS ShortName,
+                                CAST(
+                                    CASE
+                                    WHEN
+                                        f.EXPORTID IS NULL
+                                    THEN
+                                        '-'
+                                    ELSE
+                                        f.EXPORTID
+                                    END AS VARCHAR(26)
+                                ) AS BohName,
+                                a.lcount AS Quantity,
+                                0 AS GrossSales,
+                                0 AS Discount,
+                                a.amount AS NettoSales,
+                                0 AS Tax,
+                                'NORM' AS ItemType,
+                                o.FKOrderModeId AS SalesMode
+                            FROM RF_Datamart.dbo.dpvHstGndSale a
+                            LEFT JOIN RF_Datamart.dbo.gblStore d ON a.FKstoreID = d.storeID
+                            LEFT JOIN RF_Datamart.dbo.Promotion f ON a.TypeID = f.PromotionID
+                            JOIN (
+                                SELECT DISTINCT sg.CheckNumber, sg.FKOrderModeId
+                                FROM RF_Datamart.dbo.dpvHstGndItem sg
+                                LEFT JOIN RF_Datamart.dbo.gblStore sd ON sg .FKstoreID = sd.storeID
+                                WHERE sd.SecondaryStoreID = :storeCode10 AND sg.DateOfBusiness = :date10
+                            ) o ON a.CheckNumber = o.CheckNumber
+                            WHERE d.SecondaryStoreID = :storeCode4 AND a.DateOfBusiness = :date4 AND a.type = 87
+                        ) normcmb
+                        GROUP BY normcmb.SecondaryStoreID,
+                                    normcmb.DateOfBusiness,
+                                    normcmb.ShortName,
+                                    normcmb.BohName,
+                                    normcmb.ItemType,
+                                    normcmb.SalesMode,"
+                                    . $orderModeId . "
+                        UNION ALL
+
+                        SELECT
+                            tn.SecondaryStoreID,
+                            tn.DateOfBusiness,
+                            tn.ShortName,
+                            tn.BohName,
+                            tn.Quantity,
+                            tn.GrossSales,
+                            tn.Discount,
+                            tn.NettoSales,
+                            tn.Tax,
+                            tn.ItemType,
+                            tn.SalesMode
+                        FROM
+                        (
+                        SELECT
+                            b.SecondaryStoreID,
+                            a.DateOfBusiness,
+                            'Transaction Number' AS ShortName,
+                            '9999995' AS BohName,
+                            a.lCount AS Quantity,
+                            0 AS GrossSales,
+                            0 AS Discount,
+                            0 AS NettoSales,
+                            0 AS Tax,
+                            'NORM' AS ItemType,
+                            '' AS SalesMode
+                        from RF_Datamart.dbo.dpvHstSalesSummary a
+                        LEFT JOIN RF_Datamart.dbo.gblStore b ON a.FKstoreID = b.storeID
+                        WHERE a.Type = 11 AND  b.SecondaryStoreID = :storeCode5 AND a.DateOfBusiness = :date5
+                        ) tn
+                        UNION ALL
+                        SELECT
+                            rf.SecondaryStoreID,
+                            rf.DateOfBusiness,
+                            rf.ShortName,
+                            rf.BohName,
+                            rf.Quantity,
+                            rf.GrossSales,
+                            rf.Discount,
+                            rf.NettoSales,
+                            rf.Tax,
+                            rf.ItemType,
+                            rf.SalesMode
+                        FROM
+                        (
+                        SELECT
+                            b.SecondaryStoreID,
+                            a.DateOfBusiness,
+                            'Refund' AS ShortName,
+                            '9999997' AS BohName,
+                            a.lCount * -1 AS Quantity,
+                            a.Amount AS GrossSales,
+                            0 AS Discount,
+                            0 AS NettoSales,
+                            0 AS Tax,
+                            'NORM' AS ItemType,
+                            '' AS SalesMode
+                        from RF_Datamart.dbo.dpvHstSalesSummary a
+                        LEFT JOIN RF_Datamart.dbo.gblStore b ON a.FKstoreID = b.storeID
+                        WHERE a.Type = 35 AND  b.SecondaryStoreID = :storeCode6 AND a.DateOfBusiness = :date6
+                        ) rf
+                        UNION ALL
+                        SELECT
+                            vi.SecondaryStoreID,
+                            vi.DateOfBusiness,
+                            vi.ShortName,
+                            vi.BohName,
+                            vi.Quantity,
+                            vi.GrossSales,
+                            vi.Discount,
+                            vi.NettoSales,
+                            vi.Tax,
+                            vi.ItemType,
+                            vi.SalesMode
+                        FROM
+                        (
+                        SELECT
+                            b.SecondaryStoreID,
+                            a.DateOfBusiness,
+                            'Void' AS ShortName,
+                            '9999998' AS BohName,
+                            sum(a.lCount) * -1 AS Quantity,
+                            sum(a.Amount) * -1 AS GrossSales,
+                            0 AS Discount,
+                            0 AS NettoSales,
+                            0 AS Tax,
+                            'NORM' AS ItemType,
+                            '' AS SalesMode
+                        from RF_Datamart.dbo.dpvHstSalesSummary a
+                        LEFT JOIN RF_Datamart.dbo.gblStore b ON a.FKstoreID = b.storeID
+                        WHERE a.Type = 71 AND  b.SecondaryStoreID = :storeCode7 AND a.DateOfBusiness = :date7
+                        GROUP BY b.SecondaryStoreID,
+                                    a.DateOfBusiness
+                        ) vi
+                        UNION ALL
+                        SELECT
+                            tc.SecondaryStoreID,
+                            tc.DateOfBusiness,
+                            tc.ShortName,
+                            tc.BohName,
+                            tc.Quantity,
+                            tc.GrossSales,
+                            tc.Discount,
+                            tc.NettoSales,
+                            tc.Tax,
+                            tc.ItemType,
+                            tc.SalesMode
+                        FROM
+                        (
+                        SELECT
+                            b.SecondaryStoreID,
+                            a.DateOfBusiness,
+                            'Take Away Charge' AS ShortName,
+                            '9999993' AS BohName,
+                            sum(a.lCount) AS Quantity,
+                            sum(a.Amount * " . $taxMultiplication . ") AS GrossSales,
+                            0 AS Discount,
+                            sum(a.Amount) AS NettoSales,
+                            sum(a.Amount*0.1) AS Tax,
+                            'NORM' AS ItemType,
+                            '' AS SalesMode
+                        from RF_Datamart.dbo.dpvHstSalesSummary a
+                        LEFT JOIN RF_Datamart.dbo.gblStore b ON a.FKstoreID = b.storeID
+                        WHERE a.Type = 18 AND a.TypeId <> 3 AND  b.SecondaryStoreID = :storeCode8 AND a.DateOfBusiness = :date8
+                        GROUP BY b.SecondaryStoreID,
+                                    a.DateOfBusiness
+                        ) tc
+                        UNION ALL
+                        SELECT
+                            dlv.SecondaryStoreID,
+                            dlv.DateOfBusiness,
+                            dlv.ShortName,
+                            dlv.BohName,
+                            dlv.Quantity,
+                            dlv.GrossSales,
+                            dlv.Discount,
+                            dlv.NettoSales,
+                            dlv.Tax,
+                            dlv.ItemType,
+                            dlv.SalesMode
+                        FROM
+                        (
+                        SELECT
+                            b.SecondaryStoreID,
+                            a.DateOfBusiness,
+                            'Delivery Charge' AS ShortName,
+                            '9999991' AS BohName,
+                            sum(a.lCount) AS Quantity,
+                            sum(a.Amount * " . $taxMultiplication . ") AS GrossSales,
+                            0 AS Discount,
+                            sum(a.Amount) AS NettoSales,
+                            sum(a.Amount*0.1) AS Tax,
+                            'NORM' AS ItemType,
+                            '' AS SalesMode
+                        from RF_Datamart.dbo.dpvHstSalesSummary a
+                        LEFT JOIN RF_Datamart.dbo.gblStore b ON a.FKstoreID = b.storeID
+                        WHERE a.Type = 18 AND a.TypeId = 3 AND  b.SecondaryStoreID = :storeCode9 AND a.DateOfBusiness = :date9
+                        GROUP BY b.SecondaryStoreID,
+                                    a.DateOfBusiness
+                        ) dlv
+                        ) un
+                        WHERE un.BohName NOT IN ('8888888', '9999999')
+                        GROUP BY un.SecondaryStoreID,
+                                    un.DateOfBusiness,
+                                    un.ShortName,
+                                    un.BohName,
+                                    un.ItemType,
+                                    un.SalesMode
+                        "), [
+                            'storeCode1' => $customerCode, 'date1' => $date,
+                            'storeCode2' => $customerCode, 'date2' => $date,
+                            'storeCode3' => $customerCode, 'date3' => $date,
+                            'storeCode4' => $customerCode, 'date4' => $date,
+                            'storeCode5' => $customerCode, 'date5' => $date,
+                            'storeCode6' => $customerCode, 'date6' => $date,
+                            'storeCode7' => $customerCode, 'date7' => $date,
+                            'storeCode8' => $customerCode, 'date8' => $date,
+                            'storeCode9' => $customerCode, 'date9' => $date,
+                            'storeCode10' => $customerCode, 'date10' => $date,
+                        ]);
+
+        $sales = [];
+        $inventories = [];
+
+        foreach ($transactions as $transaction) {
+            if ( !in_array($transaction->BohName, ['8888888','9999999']) && strlen($transaction->BohName) > 0) {
+                $sales[] = [
+                    'COL01' => $transaction->SecondaryStoreID,
+                    'COL02' => '601',
+                    'COL03' => date("d:m:Y", strtotime($transaction->DateOfBusiness)),
+                    'COL04' => '601',
+                    'COL05' => $transaction->ItemType,
+                    'COL06' => $transaction->BohName,
+                    'COL07' => (int)$transaction->Quantity,
+                    'COL08' => round($transaction->GrossSales, 2),
+                    'COL09' => round($transaction->Discount, 2),
+                    'COL10' => round($transaction->NettoSales, 2),
+                    'COL11' => round($transaction->Tax, 2),
+                    'COL12' => '',
+                    'COL13' => '',
+                    'COL14' => '',
+                    'COL15' => '',
+                    'COL16' => $transaction->SalesMode
+                ];
+            }
+
+            if ( !in_array($transaction->BohName, ['8888888','9999999']) && strlen($transaction->BohName) > 0 && $transaction->ItemType != 'NORM') {
+                $inventories[] = [
+                    'COL01' => date("d:m:Y", strtotime($transaction->DateOfBusiness)),
+                    'COL02' => '601',
+                    'COL03' => $transaction->BohName,
+                    'COL04' => $transaction->SecondaryStoreID,
+                    'COL05' => (int)$transaction->Quantity,
+                    'COL06' => '',
+                    'COL07' => '',
+                    'COL08' => '',
+                    'COL09' => '',
+                    'COL10' => '',
+                    'COL11' => '',
+                    'COL12' => '',
+                    'COL13' => '',
+                    'COL14' => '',
+                    'COL15' => '',
+                    'COL16' => ''
+                ];
+            }
+        }
+
+        return [
+            'sales' => $sales,
+            'inventories' => $inventories
+        ];
     }
 }

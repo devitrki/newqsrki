@@ -13,6 +13,7 @@ use App\Entities\SapMiddleware;
 use App\Models\Plant;
 use App\Models\Material;
 use App\Models\Company;
+use App\Models\UomConvert;
 use App\Models\Inventory\GiPlant;
 use App\Models\Inventory\GiPlantItem;
 
@@ -52,7 +53,7 @@ class GiPlantServiceSapImpl implements GiPlantService
                 'po_item' => $coind,
                 'material_id' => $giItem->material_code,
                 'qty' => (float)$giItem->qty,
-                'uom_id' => (strtolower($giItem->uom) == 'pac') ? 'PAK' : $giItem->uom,
+                'uom_id' => UomConvert::getSendSapUom($data_gi['header']->company_id, strtoupper($giItem->uom)),
                 'sloc_id' => Plant::getSlocIdGiPlant($data_gi['header']->receiving_plant_id),
                 'item_text' => '',
                 'gr_receipt' => $data_gi['header']->requester,

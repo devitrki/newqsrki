@@ -13,6 +13,7 @@ use App\Entities\SapMiddleware;
 use App\Models\Plant;
 use App\Models\Company;
 use App\Models\Configuration;
+use App\Models\UomConvert;
 use App\Models\Inventory\GrVendor;
 
 class GrVendorServiceSapImpl implements GrVendorService
@@ -115,7 +116,7 @@ class GrVendorServiceSapImpl implements GrVendorService
                     'qty_entry' => (float)$request->qty_gr,
                     'receiver' => $request->recepient,
                     'sloc_id' => Plant::getSlocIdGrVendor($request->plant_id),
-                    'uom_id' => $request->uom
+                    'uom_id' => UomConvert::getSendSapUom($companyId, strtoupper($request->uom))
                 ]
             ],
         ];

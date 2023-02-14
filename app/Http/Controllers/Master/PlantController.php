@@ -16,6 +16,7 @@ use App\Services\PlantServiceAppsImpl;
 use App\Services\PlantServiceSapImpl;
 
 use App\Models\Plant;
+use App\Models\Pos;
 
 class PlantController extends Controller
 {
@@ -121,7 +122,8 @@ class PlantController extends Controller
             });
 
             if ($request->has('pos')) {
-                $query = $query->where('pos_id', $request->query('pos'));
+                $posId = Pos::getIdByCode($userAuth->company_id_selected, $request->pos);
+                $query = $query->where('pos_id', $posId);
             }
 
             if ($request->has('have_pos')) {

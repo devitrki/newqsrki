@@ -142,8 +142,13 @@ class Plant extends Model implements Auditable
         return $short_name;
     }
 
-    public static function getShortNameByCustCode($custCode, $initital = true){
-        $plant = DB::table('plants')->where('customer_code', $custCode)->select('initital', 'short_name')->first();
+    public static function getShortNameByCustCode($companyId, $custCode, $initital = true){
+        $plant = DB::table('plants')
+                    ->where('company_id', $companyId)
+                    ->where('customer_code', $custCode)
+                    ->select('initital', 'short_name')
+                    ->first();
+
         $short_name = '';
         if (isset($plant->short_name)) {
             if( $initital ){
@@ -153,6 +158,15 @@ class Plant extends Model implements Auditable
             }
         }
         return $short_name;
+    }
+
+    public static function getPlantByCustCode($companyId, $custCode){
+        $plant = DB::table('plants')
+                    ->where('company_id', $companyId)
+                    ->where('customer_code', $custCode)
+                    ->first();
+
+        return $plant;
     }
 
     public static function getDataPlantById($id){

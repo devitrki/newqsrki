@@ -13,6 +13,7 @@ use App\Entities\SapMiddleware;
 use App\Models\Plant;
 use App\Models\Material;
 use App\Models\Company;
+use App\Models\UomConvert;
 use App\Models\Inventory\GrPlant;
 use App\Models\Inventory\GrPlantItem;
 
@@ -188,7 +189,7 @@ class GrPlantServiceSapImpl implements GrPlantService
                 'material_id' => $material[2],
                 'sloc_id' => $slocIdGr,
                 'entry_qty' => (float)$qtyIndex,
-                'entry_uom_id' => $material[7],
+                'entry_uom_id' => UomConvert::getSendSapUom($companyId, strtoupper($material[7])),
 
             ];
         }

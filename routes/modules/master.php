@@ -20,6 +20,8 @@ use App\Http\Controllers\Master\PosController;
 use App\Http\Controllers\Master\PettycashGlCcController;
 use App\Http\Controllers\Master\OpnameMaterialFormulaController;
 use App\Http\Controllers\Master\PaymentPosController;
+use App\Http\Controllers\Master\UomConvertController;
+use App\Http\Controllers\Master\OrderModePosController;
 use App\Http\Controllers\Auth\LanguageController;
 
 /*
@@ -132,5 +134,11 @@ Route::delete('opname-material-formula/{opname_material_formula_id}/item/delete/
 
 Route::resource('payment-pos', PaymentPosController::class)->except(['show']);
 Route::get('payment-pos/dtble', [PaymentPosController::class, 'dtble']);
+
+Route::resource('order-mode-pos', OrderModePosController::class)->except(['show']);
+Route::get('order-mode-pos/dtble', [OrderModePosController::class, 'dtble']);
+
+Route::resource('uom-convert', UomConvertController::class)->except(['show']);
+Route::get('uom-convert/dtble', [UomConvertController::class, 'dtble']);
 
 Route::resource('master-configuration', ConfigurationController::class)->except(['show']);
