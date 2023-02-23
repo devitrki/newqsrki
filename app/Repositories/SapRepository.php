@@ -10,6 +10,7 @@ interface SapRepository {
     public function uploadGrPlant($payload);
     public function uploadGiPlant($payload);
     public function mutationAsset($payload);
+    public function uploadSales($payload);
     public function getMasterPlant($param);
     public function getMasterMaterial($param);
     public function getOutstandingPoVendor($param);

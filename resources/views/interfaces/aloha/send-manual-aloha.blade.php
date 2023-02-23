@@ -137,7 +137,7 @@
             var datas = [];
             for (let i = 0; i < rows.length; i++) {
                 var data = {
-                    'customer_code': rows[i].SecondaryStoreID,
+                    'customer_code': rows[i].code,
                     'date': rows[i].date
                 };
                 datas.push(data);

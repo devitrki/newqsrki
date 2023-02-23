@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Lang;
 
+use App\Library\Helper;
+
 use App\Models\Plant;
 
 class AlohaHistorySendSap extends Model
@@ -38,5 +40,33 @@ class AlohaHistorySendSap extends Model
         }
 
         return $statusSendSap;
+    }
+
+    public static function getDataReport($companyId, $storeID, $dateFrom, $dateUntil, $status)
+    {
+        $header = [
+            'date_from' => Helper::DateConvertFormat($dateFrom, 'Y/m/d', 'd/m/Y'),
+            'date_until' => Helper::DateConvertFormat($dateUntil, 'Y/m/d', 'd/m/Y'),
+        ];
+
+        $qHistories = DB::table('aloha_history_send_saps')
+                        ->where('company_id', $companyId)
+                        ->whereBetween('date', [$dateFrom, $dateUntil]);
+
+        if ($storeID != '0') {
+            $qHistories = $qHistories->where('plant_id', $storeID);
+        }
+
+        if ($status != '2') {
+            $qHistories = $qHistories->where('send', $status);
+        }
+
+        $items = $qHistories->get();
+
+        return [
+            'count' => $qHistories->count(),
+            'header' => $header,
+            'items' => $items,
+        ];
     }
 }

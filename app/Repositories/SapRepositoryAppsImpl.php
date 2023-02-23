@@ -158,6 +158,17 @@ class SapRepositoryAppsImpl implements SapRepository
         ];
     }
 
+    public function uploadSales($param)
+    {
+        $status = false;
+        $response = false;
+
+        return [
+            'status' => $status,
+            'response' => $response
+        ];
+    }
+
     public function getMasterPlant($param)
     {
         $url = config('qsrki.api.apps.url') . 'recheese/daily-sales/sap/plant';

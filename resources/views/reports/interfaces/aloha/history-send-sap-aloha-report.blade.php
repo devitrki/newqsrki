@@ -26,9 +26,9 @@
                             <td data-label="Date">{{ App\Library\Helper::DateConvertFormat($item->date, 'Y-m-d', 'd/m/Y') }}</td>
                             <td data-label="Store Code">{{ App\Models\Plant::getCustomerCodeById( $item->plant_id ) }}</td>
                             <td data-label="Store">{{ App\Models\Plant::getShortNameById( $item->plant_id ) }}</td>
-                            <td data-label="Total Payment" align="right">{{ App\Library\Helper::convertNumberToInd($item->total_payments, '', 0) }}</td>
-                            <td data-label="Total Sales" align="right">{{ App\Library\Helper::convertNumberToInd($item->total_sales, '', 0) }}</td>
-                            <td data-label="Selisih" align="right">{{ App\Library\Helper::convertNumberToInd($item->selisih, '', 0) }}</td>
+                            <td data-label="Total Payment" align="right">{{ App\Library\Helper::convertNumberToInd($item->total_payments, '', 2) }}</td>
+                            <td data-label="Total Sales" align="right">{{ App\Library\Helper::convertNumberToInd($item->total_sales, '', 2) }}</td>
+                            <td data-label="Selisih" align="right">{{ App\Library\Helper::convertNumberToInd($item->selisih, '', 2) }}</td>
                             <td data-label="Status">{{ ($item->send != 1) ? 'Not Yet' : 'Send' }}</td>
                             <td data-label="Description">{!! $item->description !!}</td>
                         </tr>

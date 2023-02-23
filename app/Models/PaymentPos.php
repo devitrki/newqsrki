@@ -34,4 +34,42 @@ class PaymentPos extends Model
 
         return $rangeTender;
     }
+
+    public static function getQueryCondtionAloha($companyId, $column, $type = 'name')
+    {
+        $paymentPos = DB::table('payment_pos')
+                            ->where('company_id', $companyId)
+                            ->whereNotNull('range_tender')
+                            ->select('method_payment_name', 'range_tender', 'sort_order')
+                            ->get();
+
+        $condition = 'CASE';
+
+        foreach ($paymentPos as $pp) {
+            $whenCondition = $column . " = " . $pp->range_tender;
+
+            $rangeTenders = explode(',', $pp->range_tender);
+            if (sizeof($rangeTenders) > 1) {
+                $whenCondition = $column . " >= " . $rangeTenders[0] . " AND ";
+                $whenCondition .= $column . " <= " . $rangeTenders[1];
+            }
+
+            $then = "'" . $pp->method_payment_name . "'";
+            if ($type != 'name') {
+                $then = $pp->sort_order;
+            }
+
+            $condition .= " WHEN " . $whenCondition . " THEN " . $then;
+        }
+
+        if ($type != 'name') {
+            $condition .= " ELSE 7 ";
+        } else {
+            $condition .= " ELSE 'YY' ";
+        }
+
+        $condition .= "END";
+
+        return $condition;
+    }
 }

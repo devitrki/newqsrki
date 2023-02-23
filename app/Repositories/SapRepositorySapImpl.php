@@ -73,6 +73,12 @@ class SapRepositorySapImpl implements SapRepository
         return $this->doHttp($path, $payload);
     }
 
+    public function uploadSales($payload)
+    {
+        $path = SapMiddleware::UPLOAD_SALES_PATH_URL;
+        return $this->doHttp($path, $payload);
+    }
+
     public function getMasterPlant($payload)
     {
         $path = SapMiddleware::MASTER_PLANT_PATH_URL;
@@ -595,6 +601,10 @@ class SapRepositorySapImpl implements SapRepository
             $response = $res->json();
         } else {
             Log::error("Error call rf middleware", [
+                $res->status(),
+                $res->json()
+            ]);
+            $response = json_encode([
                 $res->status(),
                 $res->json()
             ]);

@@ -285,4 +285,9 @@ class Helper
     {
         return str_pad($value, $length, $pad, STR_PAD_RIGHT);
     }
+
+    public static function convertDateToBetween($date)
+    {
+        return [$date . ' 00:00:00' , $date . ' 23:59:59'];
+    }
 }

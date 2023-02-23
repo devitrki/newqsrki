@@ -13,6 +13,7 @@ class SapMiddleware
     const UPLOAD_GR_PO_VENDOR_PATH_URL  = '/' . self::VERSION . '/gr/vendor';
     const UPLOAD_STOCK_OPNAME_PATH_URL  = '/' . self::VERSION . '/stock/opname';
     const UPLOAD_WASTE_PATH_URL         = '/' . self::VERSION . '/gi/scrap';
+    const UPLOAD_SALES_PATH_URL         = '/' . self::VERSION . '/daily/console';
     const MUTATION_ASSET_PATH_URL       = '/' . self::VERSION . '/asset/mutation';
     const UPLOAD_PETTYCASH_PATH_URL     = '/' . self::VERSION . '/stag/petty-cash';
     const LIST_OUTSTANDING_GR_PATH_URL  = '/' . self::VERSION . '/gr/outstanding';

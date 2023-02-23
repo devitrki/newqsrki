@@ -28,8 +28,24 @@ class OrderModePos extends Model
             $condition .= " WHEN " . $column . " = '" . $orderModeCase . "' THEN '" . $om->sap_name . "' ";
         }
 
-        $condition .= 'END';
+        $condition .= ' END';
 
         return $condition;
+    }
+
+    public static function getOrderModSapByName($companyId, $orderModeName)
+    {
+        $orderModePos = DB::table('order_mode_pos')
+                            ->where('company_id', $companyId)
+                            ->where('order_mode_name', $orderModeName)
+                            ->select('sap_name')
+                            ->first();
+
+        $name = 'NOT FOUND';
+        if ($orderModePos) {
+            $name = $orderModePos->sap_name;
+        }
+
+        return $name;
     }
 }
