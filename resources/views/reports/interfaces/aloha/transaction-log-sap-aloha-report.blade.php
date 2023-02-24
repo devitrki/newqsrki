@@ -24,7 +24,7 @@
                                 </div>
                             </td>
                             <td width="*">{{ $item['message'] }}</td>
-                            <td width="140">{{ App\Library\Helper::DateConvertFormat($item['created_at'], 'Y-m-d H:i:s', 'd/m/Y H:i:s') }}</td>
+                            <td width="140">{{ App\Library\Helper::DateConvertFormatTz($item['created_at'], 'Y-m-d H:i:s', 'UTC', 'd-m-Y H:i:s', $item['company_id']) }}</td>
                         </tr>
                         @endforeach
                     @endforeach

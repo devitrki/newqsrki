@@ -47,6 +47,7 @@ class AlohaTransactionLog extends Model
             }
 
             $logs[$plant][$closingDate][] = [
+                'company_id' => $companyId,
                 'status' => $transactionLog->status,
                 'icon_status' => $iconStatus,
                 'icon_color' => $iconColor,

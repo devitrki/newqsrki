@@ -105,7 +105,12 @@ class Plant extends Model implements Auditable
             $name = '';
             if($value->plant_id != 0){
                 $plant = DB::table('plants')->where('id', $value->plant_id)->first();
-                $name = $plant->initital . ' ' .$plant->short_name;
+                if ($plant) {
+                    $name = $plant->initital . ' ' .$plant->short_name;
+                } else {
+                    $name = '-';
+                }
+
             }else{
                 $name = Lang::get('All');
             }

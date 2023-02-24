@@ -561,58 +561,66 @@ class SapRepositorySapImpl implements SapRepository
     }
 
     private function doHttp($path, $payload, $debug = null){
-        if ($debug === null) {
-            $debug = false;
+        try {
+            if ($debug === null) {
+                $debug = false;
+            }
+
+            $sapApiKey = Company::getConfigByKey($this->companyId, 'SAP_API_KEY');
+            $sapApiSecretKey = Company::getConfigByKey($this->companyId, 'SAP_API_SECRET_KEY');
+
+            $url = $this->baseUrl . $path;
+            $payload = json_encode($payload);
+            $signature = SapMiddleware::generateSignature($sapApiKey, $sapApiSecretKey, $this->timestamp, $path, $payload);
+            $headers = SapMiddleware::getHeaderHttp($sapApiKey, $this->timestamp, $signature);
+
+            if ($debug) {
+                $res = Http::dd()
+                        ->withHeaders($headers)
+                        ->acceptJson()
+                        ->timeout($this->timeout)
+                        ->withBody($payload, 'application/json')
+                        ->post($url);
+            } else {
+                $res = Http::withHeaders($headers)
+                        ->acceptJson()
+                        ->timeout($this->timeout)
+                        ->withBody($payload, 'application/json')
+                        ->post($url);
+            }
+
+            $status = false;
+            $response = false;
+
+            // !dd([
+            //     $res->status(),
+            //     $res->json()
+            // ]);
+
+            if ($res->ok()) {
+                $status = true;
+                $response = $res->json();
+            } else {
+                Log::error("Error call rf middleware", [
+                    $res->status(),
+                    $res->json()
+                ]);
+                $response = json_encode([
+                    $res->status(),
+                    $res->json()
+                ]);
+            }
+
+            return [
+                'status' => $status,
+                'response' => $response
+            ];
+
+        } catch (\Throwable $th) {
+            return [
+                'status' => false,
+                'response' => 'Timeout from middleware'
+            ];
         }
-
-        $sapApiKey = Company::getConfigByKey($this->companyId, 'SAP_API_KEY');
-        $sapApiSecretKey = Company::getConfigByKey($this->companyId, 'SAP_API_SECRET_KEY');
-
-        $url = $this->baseUrl . $path;
-        $payload = json_encode($payload);
-        $signature = SapMiddleware::generateSignature($sapApiKey, $sapApiSecretKey, $this->timestamp, $path, $payload);
-        $headers = SapMiddleware::getHeaderHttp($sapApiKey, $this->timestamp, $signature);
-
-        if ($debug) {
-            $res = Http::dd()
-                    ->withHeaders($headers)
-                    ->acceptJson()
-                    ->timeout($this->timeout)
-                    ->withBody($payload, 'application/json')
-                    ->post($url);
-        } else {
-            $res = Http::withHeaders($headers)
-                    ->acceptJson()
-                    ->timeout($this->timeout)
-                    ->withBody($payload, 'application/json')
-                    ->post($url);
-        }
-
-        $status = false;
-        $response = false;
-
-        // !dd([
-        //     $res->status(),
-        //     $res->json()
-        // ]);
-
-        if ($res->ok()) {
-            $status = true;
-            $response = $res->json();
-        } else {
-            Log::error("Error call rf middleware", [
-                $res->status(),
-                $res->json()
-            ]);
-            $response = json_encode([
-                $res->status(),
-                $res->json()
-            ]);
-        }
-
-        return [
-            'status' => $status,
-            'response' => $response
-        ];
     }
 }

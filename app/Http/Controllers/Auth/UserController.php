@@ -55,7 +55,7 @@ class UserController extends Controller
         return Datatables::of($query)
                         ->addIndexColumn()
                         ->filterColumn('profile_name', function($query, $keyword) {
-                                $sql = "LOWER(profiles).name like ?";
+                                $sql = "LOWER(profiles.name) like ?";
                                 $query->whereRaw($sql, ["%{$keyword}%"]);
                             })
                         ->filterColumn('country_name', function($query, $keyword) {

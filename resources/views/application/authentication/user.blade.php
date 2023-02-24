@@ -116,7 +116,7 @@
                                 'label' => 'Languange',
                                 'data' => 'lang',
                                 'orderable' => 'false',
-                                'searchable' => 'true',
+                                'searchable' => 'false',
                             ],
                             [
                                 'label' => 'Status',

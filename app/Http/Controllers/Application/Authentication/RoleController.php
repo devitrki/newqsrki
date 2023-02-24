@@ -192,7 +192,12 @@ class RoleController extends Controller
             if ($userPlants) {
                 if( $userPlants->plant_id != '0' ){
                     $plant = DB::table('plants')->where('id', $userPlants->plant_id)->first();
-                    $authorize_role = $plant->initital . ' ' .  $plant->short_name;
+                    if ($plant) {
+                        $authorize_role = $plant->initital . ' ' .  $plant->short_name;
+                    } else {
+                        $authorize_role = '-';
+                    }
+
                 }
             }
         }

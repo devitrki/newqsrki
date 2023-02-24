@@ -51,120 +51,139 @@ class UploadSalesAloha implements ShouldQueue
         $posRepository = Pos::getInstanceRepo($pos);
         $initConnectionAloha = $posRepository->initConnectionDB();
         if ($initConnectionAloha['status']) {
-            $dataPos = $posRepository->getSalesFormatSAPMiddleware($this->customerCode, $this->date);
-            $calc = $this->getSelisih($dataPos);
-            $statusComplete = $posRepository->checkCompleteStoreAloha($this->customerCode, $this->date);
-            $statusCorrection = $posRepository->checkCorrectionStoreAloha($this->customerCode, $this->date);
 
-            if($statusComplete < 1){
-                $alohaHistorySendSap = new AlohaHistorySendSap;
-                $alohaHistorySendSap->company_id = $this->companyId;
-                $alohaHistorySendSap->date = $this->date;
-                $alohaHistorySendSap->plant_id = $plant->id;
-                $alohaHistorySendSap->total_payments = $calc['total_payment'];
-                $alohaHistorySendSap->total_sales = $calc['total_sales'];
-                $alohaHistorySendSap->selisih = $calc['selisih'];
-                $alohaHistorySendSap->description = 'Not Yet Complete';
-                $alohaHistorySendSap->send = 0;
-                $alohaHistorySendSap->save();
-            } else if ($statusCorrection > 0) {
+            try {
+                $dataPos = $posRepository->getSalesFormatSAPMiddleware($this->customerCode, $this->date);
+                $calc = $this->getSelisih($dataPos);
+                $statusComplete = $posRepository->checkCompleteStoreAloha($this->customerCode, $this->date);
+                $statusCorrection = $posRepository->checkCorrectionStoreAloha($this->customerCode, $this->date);
 
-                $alohaHistorySendSap = new AlohaHistorySendSap;
-                $alohaHistorySendSap->company_id = $this->companyId;
-                $alohaHistorySendSap->date = $this->date;
-                $alohaHistorySendSap->plant_id = $plant->id;
-                $alohaHistorySendSap->total_payments = $calc['total_payment'];
-                $alohaHistorySendSap->total_sales = $calc['total_sales'];
-                $alohaHistorySendSap->selisih = $calc['selisih'];
-                $alohaHistorySendSap->description = 'Have Correction';
-                $alohaHistorySendSap->send = 0;
-                $alohaHistorySendSap->save();
+                if($statusComplete < 1){
+                    $alohaHistorySendSap = new AlohaHistorySendSap;
+                    $alohaHistorySendSap->company_id = $this->companyId;
+                    $alohaHistorySendSap->date = $this->date;
+                    $alohaHistorySendSap->plant_id = $plant->id;
+                    $alohaHistorySendSap->total_payments = $calc['total_payment'];
+                    $alohaHistorySendSap->total_sales = $calc['total_sales'];
+                    $alohaHistorySendSap->selisih = $calc['selisih'];
+                    $alohaHistorySendSap->description = 'Not Yet Complete';
+                    $alohaHistorySendSap->send = 0;
+                    $alohaHistorySendSap->save();
+                } else if ($statusCorrection > 0) {
 
-            } else if($calc['selisih'] > 2000){
+                    $alohaHistorySendSap = new AlohaHistorySendSap;
+                    $alohaHistorySendSap->company_id = $this->companyId;
+                    $alohaHistorySendSap->date = $this->date;
+                    $alohaHistorySendSap->plant_id = $plant->id;
+                    $alohaHistorySendSap->total_payments = $calc['total_payment'];
+                    $alohaHistorySendSap->total_sales = $calc['total_sales'];
+                    $alohaHistorySendSap->selisih = $calc['selisih'];
+                    $alohaHistorySendSap->description = 'Have Correction';
+                    $alohaHistorySendSap->send = 0;
+                    $alohaHistorySendSap->save();
 
-                $alohaHistorySendSap = new AlohaHistorySendSap;
-                $alohaHistorySendSap->company_id = $this->companyId;
-                $alohaHistorySendSap->date = $this->date;
-                $alohaHistorySendSap->plant_id = $plant->id;
-                $alohaHistorySendSap->total_payments = $calc['total_payment'];
-                $alohaHistorySendSap->total_sales = $calc['total_sales'];
-                $alohaHistorySendSap->selisih = $calc['selisih'];
-                $alohaHistorySendSap->description = 'Selisih > 2';
-                $alohaHistorySendSap->send = 0;
-                $alohaHistorySendSap->save();
+                } else if($calc['selisih'] > 2000){
 
-            } else {
-                $dateSap = Helper::DateConvertFormat($this->date, 'Y/m/d', 'Y-m-d');
-                $dateNow = Date::now()->format('Y-m-d');
+                    $alohaHistorySendSap = new AlohaHistorySendSap;
+                    $alohaHistorySendSap->company_id = $this->companyId;
+                    $alohaHistorySendSap->date = $this->date;
+                    $alohaHistorySendSap->plant_id = $plant->id;
+                    $alohaHistorySendSap->total_payments = $calc['total_payment'];
+                    $alohaHistorySendSap->total_sales = $calc['total_sales'];
+                    $alohaHistorySendSap->selisih = $calc['selisih'];
+                    $alohaHistorySendSap->description = 'Selisih > 2';
+                    $alohaHistorySendSap->send = 0;
+                    $alohaHistorySendSap->save();
 
-                $payloads = [
-                    'outlet_id' => $this->customerCode,
-                    'transaction_date' => $dateSap,
-                    'payments' => $dataPos['payments'],
-                    'sales' => $dataPos['sales'],
-                    'inventories' => $dataPos['inventories'],
-                ];
+                } else {
+                    $dateSap = Helper::DateConvertFormat($this->date, 'Y/m/d', 'Y-m-d');
+                    $dateNow = Date::now()->format('Y-m-d');
 
-                $statusHistorySap = true;
-                $messageHistorySap = "";
+                    $payloads = [
+                        'outlet_id' => $this->customerCode,
+                        'transaction_date' => $dateSap,
+                        'payments' => $dataPos['payments'],
+                        'sales' => $dataPos['sales'],
+                        'inventories' => $dataPos['inventories'],
+                    ];
 
-                $sapRepository = new SapRepositorySapImpl($this->companyId);
-                $sapResponse = $sapRepository->uploadSales($payloads);
-                if ($sapResponse['status']) {
-                    $resSap = $sapResponse['response'];
+                    $statusHistorySap = true;
+                    $messageHistorySap = "";
 
-                    if ($resSap['outlet_id']) {
+                    $sapRepository = new SapRepositorySapImpl($this->companyId);
+                    $sapResponse = $sapRepository->uploadSales($payloads);
+                    if ($sapResponse['status']) {
+                        $resSap = $sapResponse['response'];
 
-                        $payloads = [
-                            'outlet_id' => $this->customerCode,
-                            'transaction_date' => $dateNow
-                        ];
+                        if ($resSap['outlet_id']) {
 
-                        $logSapResponse = $sapRepository->getTransactionLog($payloads);
-                        if ($logSapResponse['status']) {
+                            $payloads = [
+                                'outlet_id' => $this->customerCode,
+                                'transaction_date' => $dateNow
+                            ];
 
-                            $logRespSap = $logSapResponse['response'];
-                            $logs = $logRespSap['logs'];
-                            $lastTransactionLogs = [];
-                            $fiFlag = false;
-                            $mmFlag = false;
-                            $sdFlag = false;
-                            for ($i=sizeof($logs)-1; $i > 0; $i--) {
-                                if ($logs[$i]['document_date'] == $dateSap && $logs[$i]['entry_date'] == $dateNow) {
-                                    $lastTransactionLogs[] = $logs[$i];
-                                    if ($logs[$i]['document_type'] == 'FI') {
-                                        $fiFlag = true;
+                            $logSapResponse = $sapRepository->getTransactionLog($payloads);
+                            if ($logSapResponse['status']) {
+
+                                $logRespSap = $logSapResponse['response'];
+                                $logs = $logRespSap['logs'];
+                                $lastTransactionLogs = [];
+                                $fiFlag = false;
+                                $mmFlag = false;
+                                $sdFlag = false;
+                                for ($i=sizeof($logs)-1; $i > 0; $i--) {
+                                    if ($logs[$i]['document_date'] == $dateSap && $logs[$i]['entry_date'] == $dateNow) {
+                                        $lastTransactionLogs[] = $logs[$i];
+                                        if ($logs[$i]['document_type'] == 'FI') {
+                                            $fiFlag = true;
+                                        }
+                                        if ($logs[$i]['document_type'] == 'MM') {
+                                            $mmFlag = true;
+                                        }
+                                        if ($logs[$i]['document_type'] == 'SD') {
+                                            $sdFlag = true;
+                                        }
                                     }
-                                    if ($logs[$i]['document_type'] == 'MM') {
-                                        $mmFlag = true;
-                                    }
-                                    if ($logs[$i]['document_type'] == 'SD') {
-                                        $sdFlag = true;
+
+                                    if ($fiFlag && $mmFlag && $sdFlag) {
+                                        break;
                                     }
                                 }
 
-                                if ($fiFlag && $mmFlag && $sdFlag) {
-                                    break;
+                                foreach ($lastTransactionLogs as $lastTransactionLog) {
+                                    $message = $lastTransactionLog['document_type'] . ' ' . $lastTransactionLog['status_code'] . ' ' . $lastTransactionLog['message'];
+
+                                    $alohaTransactionLog = new AlohaTransactionLog;
+                                    $alohaTransactionLog->company_id = $this->companyId;
+                                    $alohaTransactionLog->type = 1;
+                                    $alohaTransactionLog->status = $lastTransactionLog['status_code'];
+                                    $alohaTransactionLog->message = $message;
+                                    $alohaTransactionLog->closing_date = $this->date;
+                                    $alohaTransactionLog->plant_id = $plant->id;
+                                    if ($alohaTransactionLog->save()) {
+                                        $statusHistorySap = true;
+                                        $messageHistorySap = "Success send to SAP";
+                                    } else {
+                                        $statusHistorySap = false;
+                                        $messageHistorySap = "Save aloha transaction log error";
+                                        break;
+                                    }
                                 }
-                            }
 
-                            foreach ($lastTransactionLogs as $lastTransactionLog) {
-                                $message = $lastTransactionLog['document_type'] . ' ' . $lastTransactionLog['status_code'] . ' ' . $lastTransactionLog['message'];
-
+                            } else {
+                                // adding message error
                                 $alohaTransactionLog = new AlohaTransactionLog;
                                 $alohaTransactionLog->company_id = $this->companyId;
-                                $alohaTransactionLog->type = 1;
-                                $alohaTransactionLog->status = $lastTransactionLog['status_code'];
-                                $alohaTransactionLog->message = $message;
+                                $alohaTransactionLog->type = 0;
+                                $alohaTransactionLog->status = 'E';
+                                $alohaTransactionLog->message = json_encode($logSapResponse['errors']);
                                 $alohaTransactionLog->closing_date = $this->date;
                                 $alohaTransactionLog->plant_id = $plant->id;
                                 if ($alohaTransactionLog->save()) {
-                                    $statusHistorySap = true;
-                                    $messageHistorySap = "Success send to SAP";
+                                    $statusHistorySap = false;
                                 } else {
                                     $statusHistorySap = false;
-                                    $messageHistorySap = "Save aloha transaction log error";
-                                    break;
+                                    $messageHistorySap = "Save aloha error transaction log error";
                                 }
                             }
 
@@ -174,53 +193,49 @@ class UploadSalesAloha implements ShouldQueue
                             $alohaTransactionLog->company_id = $this->companyId;
                             $alohaTransactionLog->type = 0;
                             $alohaTransactionLog->status = 'E';
-                            $alohaTransactionLog->message = json_encode($logSapResponse['errors']);
+                            $alohaTransactionLog->message = json_encode($resSap['errors']);
                             $alohaTransactionLog->closing_date = $this->date;
                             $alohaTransactionLog->plant_id = $plant->id;
                             if ($alohaTransactionLog->save()) {
                                 $statusHistorySap = false;
                             } else {
                                 $statusHistorySap = false;
-                                $messageHistorySap = "Save aloha error transaction log error";
+                                $messageHistorySap = "Save aloha error transaction daily error";
                             }
                         }
 
                     } else {
-                        // adding message error
-                        $alohaTransactionLog = new AlohaTransactionLog;
-                        $alohaTransactionLog->company_id = $this->companyId;
-                        $alohaTransactionLog->type = 0;
-                        $alohaTransactionLog->status = 'E';
-                        $alohaTransactionLog->message = json_encode($resSap['errors']);
-                        $alohaTransactionLog->closing_date = $this->date;
-                        $alohaTransactionLog->plant_id = $plant->id;
-                        if ($alohaTransactionLog->save()) {
-                            $statusHistorySap = false;
-                        } else {
-                            $statusHistorySap = false;
-                            $messageHistorySap = "Save aloha error transaction daily error";
-                        }
+                        $statusHistorySap = false;
+                        $messageHistorySap = $sapResponse['response'];
                     }
 
-                } else {
-                    $statusHistorySap = false;
-                    $messageHistorySap = $sapResponse['response'];
+                    // insert to history send sales report
+                    $alohaHistorySendSap = new AlohaHistorySendSap;
+                    $alohaHistorySendSap->company_id = $this->companyId;
+                    $alohaHistorySendSap->date = $this->date;
+                    $alohaHistorySendSap->plant_id = $plant->id;
+                    $alohaHistorySendSap->total_payments = $calc['total_payment'];
+                    $alohaHistorySendSap->total_sales = $calc['total_sales'];
+                    $alohaHistorySendSap->selisih = $calc['selisih'];
+                    $alohaHistorySendSap->description = $messageHistorySap;
+                    if ($statusHistorySap) {
+                        $alohaHistorySendSap->send = 1;
+                    } else {
+                        $alohaHistorySendSap->send = 0;
+                    }
+                    $alohaHistorySendSap->save();
                 }
 
-                // insert to history send sales report
+            } catch (\Throwable $th) {
                 $alohaHistorySendSap = new AlohaHistorySendSap;
                 $alohaHistorySendSap->company_id = $this->companyId;
                 $alohaHistorySendSap->date = $this->date;
                 $alohaHistorySendSap->plant_id = $plant->id;
-                $alohaHistorySendSap->total_payments = $calc['total_payment'];
-                $alohaHistorySendSap->total_sales = $calc['total_sales'];
-                $alohaHistorySendSap->selisih = $calc['selisih'];
-                $alohaHistorySendSap->description = $messageHistorySap;
-                if ($statusHistorySap) {
-                    $alohaHistorySendSap->send = 1;
-                } else {
-                    $alohaHistorySendSap->send = 0;
-                }
+                $alohaHistorySendSap->total_payments = 0;
+                $alohaHistorySendSap->total_sales = 0;
+                $alohaHistorySendSap->selisih = 0;
+                $alohaHistorySendSap->description = 'Timeout database aloha';
+                $alohaHistorySendSap->send = 0;
                 $alohaHistorySendSap->save();
             }
 

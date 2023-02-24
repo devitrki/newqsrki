@@ -58,6 +58,9 @@ class StockServiceSapImpl implements StockService
                     "uom" => $stockSap['uom_id'],
                 ];
             }
+        } else {
+            $status = false;
+            $message = 'Error middleware: ' . $sapResponse['response'];
         }
 
         return [

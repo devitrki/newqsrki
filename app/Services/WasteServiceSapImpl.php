@@ -102,7 +102,7 @@ class WasteServiceSapImpl implements WasteService
 
         } else {
             $status = false;
-            $message = Lang::get("Sorry, an error occurred, please try again later");
+            $message = 'Error middleware: ' . $sapResponse['response'];
         }
 
         return [

@@ -12,6 +12,7 @@ use App\Models\Plant;
 use App\Models\Material;
 use App\Models\PaymentPos;
 use App\Models\OrderModePos;
+use Illuminate\Support\Facades\Log;
 
 class AlohaRepository implements PosRepository{
     public $posId;
@@ -25,73 +26,82 @@ class AlohaRepository implements PosRepository{
 
     public function initConnectionDB()
     {
-        $status = true;
-        $message = '';
+        try {
+            $status = true;
+            $message = '';
 
-        $key_db_host = 'DB_HOST';
-        $key_db_port = 'DB_PORT';
-        $key_db_name = 'DB_NAME';
-        $key_db_username = 'DB_USERNAME';
-        $key_db_password = 'DB_PASSWORD';
+            $key_db_host = 'DB_HOST';
+            $key_db_port = 'DB_PORT';
+            $key_db_name = 'DB_NAME';
+            $key_db_username = 'DB_USERNAME';
+            $key_db_password = 'DB_PASSWORD';
 
-        $db_host = '';
-        $db_port = '';
-        $db_name = '';
-        $db_username = '';
-        $db_password = '';
+            $db_host = '';
+            $db_port = '';
+            $db_name = '';
+            $db_username = '';
+            $db_password = '';
 
-        $configurations = Pos::getConfigs($this->posId);
-        $configurations = json_decode($configurations);
-        foreach ($configurations as $k => $v) {
-            if ($key_db_host == $k) {
-                $db_host = $v;
+            $configurations = Pos::getConfigs($this->posId);
+            $configurations = json_decode($configurations);
+            foreach ($configurations as $k => $v) {
+                if ($key_db_host == $k) {
+                    $db_host = $v;
+                }
+                if ($key_db_port == $k) {
+                    $db_port = $v;
+                }
+                if ($key_db_name == $k) {
+                    $db_name = $v;
+                }
+                if ($key_db_username == $k) {
+                    $db_username = $v;
+                }
+                if ($key_db_password == $k) {
+                    $db_password = $v;
+                }
             }
-            if ($key_db_port == $k) {
-                $db_port = $v;
-            }
-            if ($key_db_name == $k) {
-                $db_name = $v;
-            }
-            if ($key_db_username == $k) {
-                $db_username = $v;
-            }
-            if ($key_db_password == $k) {
-                $db_password = $v;
-            }
-        }
 
-        if ($db_host | $db_port | $db_name | $db_username | $db_password) {
-            $this->connectionDB = true;
-        } else {
+            if ($db_host | $db_port | $db_name | $db_username | $db_password) {
+                $this->connectionDB = true;
+            } else {
+                $status = false;
+                $message = 'Please check your pos aloha config';
+
+                return [
+                    'status' => $status,
+                    'message' => $message
+                ];
+            }
+
+            $connectionName = 'aloha_' . $this->posId;
+
+            Config::set('database.connections.' . $connectionName, [
+                'driver' => 'sqlsrv',
+                'host' => $db_host,
+                'port' => $db_port,
+                'database' => $db_name,
+                'username' => $db_username,
+                'password' => $db_password,
+                'charset' => 'utf8',
+                'prefix' => '',
+                'prefix_indexes' => true,
+            ]);
+
+            $this->connectionName = $connectionName;
+
+        } catch (\Throwable $th) {
             $status = false;
-            $message = 'Please check your pos aloha config';
+            $message = 'Cannot connect db aloha';
 
+            Log::error('Cannot connect db aloha');
+
+        } finally {
             return [
                 'status' => $status,
                 'message' => $message
             ];
         }
-
-        $connectionName = 'aloha_' . $this->posId;
-
-        Config::set('database.connections.' . $connectionName, [
-            'driver' => 'sqlsrv',
-            'host' => $db_host,
-            'port' => $db_port,
-            'database' => $db_name,
-            'username' => $db_username,
-            'password' => $db_password,
-            'charset' => 'utf8',
-            'prefix' => '',
-            'prefix_indexes' => true,
-        ]);
-
-        $this->connectionName = $connectionName;
-
-        return [
-            'status' => $status,
-            'message' => $message
-        ];
     }
 
     // utility
@@ -1294,7 +1304,7 @@ class AlohaRepository implements PosRepository{
                                         d.SecondaryStoreID,
                                         a.DateOfBusiness,
                                         'Rounding' AS ShortName,
-                                        '9999996' AS BohName,
+                                        '9799999' AS BohName,
                                         a.lcount AS Quantity,
                                         a.amount AS GrossSales,
                                         0 AS Discount,

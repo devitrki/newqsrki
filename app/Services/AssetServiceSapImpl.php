@@ -97,6 +97,9 @@ class AssetServiceSapImpl implements AssetService
                 $status = false;
                 $message = Lang::get("message.sync.failed", ["data" => Lang::get("asset")]);
             }
+        } else {
+            $status = false;
+            $message = 'Error middleware: ' . $sapResponse['response'];
         }
 
         return [
@@ -143,7 +146,7 @@ class AssetServiceSapImpl implements AssetService
 
         } else {
             $status = false;
-            $message = Lang::get("Sorry, an error occurred, please try again later");
+            $message = 'Error middleware: ' . $sapResponse['response'];
         }
 
         return [
