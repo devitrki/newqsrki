@@ -20,7 +20,7 @@ class GenerateTransaction implements FromView, ShouldAutoSize
     public function view(): View
     {
         $report_data = [
-            'title' => Lang::get('Trancsaction Sales Richeese Factory'),
+            'title' => Lang::get('Transaction Sales Richeese Factory'),
             'data' => $this->data
         ];
 

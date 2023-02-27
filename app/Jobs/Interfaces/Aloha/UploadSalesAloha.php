@@ -82,7 +82,7 @@ class UploadSalesAloha implements ShouldQueue
                     $alohaHistorySendSap->send = 0;
                     $alohaHistorySendSap->save();
 
-                } else if($calc['selisih'] > 2000){
+                } else if($calc['selisih'] > 2){
 
                     $alohaHistorySendSap = new AlohaHistorySendSap;
                     $alohaHistorySendSap->company_id = $this->companyId;

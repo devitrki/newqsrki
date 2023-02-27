@@ -135,11 +135,6 @@ class AlohaRepository implements PosRepository{
         return DB::connection($this->connectionName)
                 ->table('dpvHstGndSale')
                 ->leftJoin('gblStore', 'gblStore.storeID', 'dpvHstGndSale.FKstoreID')
-                ->whereRaw('
-                    gblStore.SecondaryStoreID = ? AND
-                    dpvHstGndSale.DateOfBusiness = ? AND
-                    dpvHstGndSale.type IN (4,5,6)
-                ', [$customerCode, $date])
                 ->selectRaw('
                     dpvHstGndSale.DateOfBusiness AS Date,
                     (
@@ -165,6 +160,72 @@ class AlohaRepository implements PosRepository{
                     END
                     ), 0, 1) AS TotalDiscount
                 ')
+                ->whereRaw('
+                    gblStore.SecondaryStoreID = ? AND
+                    dpvHstGndSale.DateOfBusiness = ? AND
+                    dpvHstGndSale.type IN (4,5,6)
+                ', [$customerCode, $date])
+                ->groupByRaw('
+                    gblStore.SecondaryStoreID,
+                    dpvHstGndSale.DateOfBusiness,
+                    dpvHstGndSale.CheckNumber,
+                    dpvHstGndSale.FKStoreID
+                ')
+                ->get();
+    }
+
+    public function getTransactionReceiptNumber($customerCode, $date)
+    {
+        return DB::connection($this->connectionName)
+                ->table('dpvHstGndSale')
+                ->leftJoin('gblStore', 'gblStore.storeID', 'dpvHstGndSale.FKstoreID')
+                ->selectRaw('
+                    dpvHstGndSale.DateOfBusiness AS receipt_date,
+                    (
+                        SELECT TOP 1 a.SystemDate
+                        FROM dbo.dpvHstGndItem a
+                        WHERE a.DateOfBusiness = dpvHstGndSale.DateOfBusiness AND
+                                a.CheckNumber = dpvHstGndSale.CheckNumber AND
+                                a.FKStoreID = dpvHstGndSale.FKStoreID
+                    ) AS receipt_time,
+                    dpvHstGndSale.CheckNumber AS receipt_number,
+                    SUM(
+                        CASE
+                            WHEN (dpvHstGndSale.type <> 31) THEN 0
+                            ELSE dpvHstGndSale.Amount
+                        END
+                    ) AS sub_total_amount,
+                    SUM(
+                        CASE
+                            WHEN (dpvHstGndSale.type NOT IN (5, 6)) THEN 0
+                            ELSE dpvHstGndSale.Amount
+                        END
+                    ) AS discount_amount,
+                    SUM(
+                        CASE
+                            WHEN (dpvHstGndSale.type <> 33) THEN 0
+                            ELSE dpvHstGndSale.Amount
+                        END
+                    ) AS tax_amount,
+                    SUM(
+                        CASE
+                            WHEN (dpvHstGndSale.type <> 45) THEN 0
+                            ELSE dpvHstGndSale.Amount
+                        END
+                    ) AS rounding_amount,
+                    0 AS service_charge_amount,
+                    SUM(
+                        CASE
+                            WHEN (dpvHstGndSale.type <> 4) THEN 0
+                            ELSE dpvHstGndSale.Amount
+                        END
+                    ) AS grand_total_amount
+                ')
+                ->whereRaw('
+                    gblStore.SecondaryStoreID = ? AND
+                    dpvHstGndSale.DateOfBusiness = ? AND
+                    dpvHstGndSale.type IN (4, 5, 6, 31, 33, 45)
+                ', [$customerCode, $date])
                 ->groupByRaw('
                     gblStore.SecondaryStoreID,
                     dpvHstGndSale.DateOfBusiness,

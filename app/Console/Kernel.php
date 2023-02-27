@@ -45,8 +45,8 @@ class Kernel extends ConsoleKernel
             // schedule send tax
             if ($companyTimezone) {
                 $schedule->job(new ScheduleSendTaxFtp($company->id))
-                    ->timezone($companyTimezone)
-                    ->dailyAt('23:26');
+                        ->timezone($companyTimezone)
+                        ->dailyAt('23:26');
             }
 
             // schedule for asset so
