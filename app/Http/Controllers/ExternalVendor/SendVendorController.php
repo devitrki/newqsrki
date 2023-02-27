@@ -167,9 +167,8 @@ class SendVendorController extends Controller
         return response()->json(Helper::resJSON($stat, $msg));
     }
 
-    public function receive($dateFrom, $dateUntil)
+    public function receive($targetVendorId, $dateFrom, $dateUntil)
     {
-        $targetVendorId = 2;
         $host = TargetVendor::getConfigByKey($targetVendorId, 'HOST');
         $authenticationKey = TargetVendor::getConfigByKey($targetVendorId, 'AUTHENTICATION_KEY');
 

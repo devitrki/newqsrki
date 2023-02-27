@@ -7,6 +7,7 @@ use App\Http\Controllers\Inventory\ReportInventoryController;
 use App\Http\Controllers\Tax\ReportTaxController;
 use App\Http\Controllers\Pos\ReportPosController;
 use App\Http\Controllers\Interfaces\ReportInterfacesController;
+use App\Http\Controllers\ExternalVendor\ReportExternalVendorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -46,3 +47,8 @@ Route::post('pos/{menu}/export', [ReportPosController::class, 'export']);
 Route::get('financeacc/{menu}', [ReportFinanceaccController::class, 'index']);
 Route::get('financeacc/{menu}/report', [ReportFinanceaccController::class, 'report']);
 Route::post('financeacc/{menu}/export', [ReportFinanceaccController::class, 'export']);
+
+// module external vendor
+Route::get('external-vendor/{menu}', [ReportExternalVendorController::class, 'index']);
+Route::get('external-vendor/{menu}/report', [ReportExternalVendorController::class, 'report']);
+Route::post('external-vendor/{menu}/export', [ReportExternalVendorController::class, 'export']);

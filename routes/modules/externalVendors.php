@@ -34,5 +34,5 @@ Route::get('send-vendor/dtble', [SendVendorController::class, 'dtble']);
 Route::get('send-vendor/select', [SendVendorController::class, 'select']);
 Route::post('send-vendor/send', [SendVendorController::class, 'send']);
 Route::get('send-vendor/download', [SendVendorController::class, 'download']);
-Route::get('send-vendor/receive/{dateFrom}/{dateUntil}', [SendVendorController::class, 'receive']);
+Route::get('send-vendor/receive/{targetVendorId}/{dateFrom}/{dateUntil}', [SendVendorController::class, 'receive']);
 Route::get('send-vendor/clear-test', [SendVendorController::class, 'clearTest']);
