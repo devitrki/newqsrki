@@ -281,7 +281,7 @@
             data = row_data[0];
             {{$dom}}.data.id = data.id;
 
-            fslcttemplate_sales{{$dom}}.set(data.template_sales_id, data.template_sales);
+            fslcttemplate_sales{{$dom}}.set(data.template_sale_id, data.template_sales);
             fslcttarget_vendor{{$dom}}.set(data.target_vendor_id, data.target_vendor);
             fslctplant{{$dom}}.set(data.plant_id, data.initital + ' ' + data.short_name);
             $("#prefix_name_store{{$dom}}").val(data.prefix_name_store);

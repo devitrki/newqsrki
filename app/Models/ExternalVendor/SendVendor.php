@@ -197,12 +197,16 @@ class SendVendor extends Model implements Auditable
                 } else if ($templateSalesDetail->data == 'service_charge_percent') {
                     $dataTransactionTemp[$templateSalesDetail->field_name] = 0.0;
                 } else if ($templateSalesDetail->data == 'is_void') {
-                    $dataTransactionTemp[$templateSalesDetail->field_name] = false;
+                    $dataTransactionTemp[$templateSalesDetail->field_name] = ($transaction->grand_total_amount < 0) ? true : false;
                 } else if ($templateSalesDetail->data == 'is_test') {
                     $dataTransactionTemp[$templateSalesDetail->field_name] = true;
                 } else {
                     if (in_array($templateSalesDetail->data, $templateSalesFieldNumbers)) {
-                        $dataTransactionTemp[$templateSalesDetail->field_name] = (float)$transaction->{$templateSalesDetail->data};
+                        if ($templateSalesDetail->data == 'sub_total_amount' && $transaction->{$templateSalesDetail->data} <= 0) {
+                            $dataTransactionTemp[$templateSalesDetail->field_name] = (float)$transaction->discount_amount;
+                        } else {
+                            $dataTransactionTemp[$templateSalesDetail->field_name] = (float)$transaction->{$templateSalesDetail->data};
+                        }
                     } else {
                         $dataTransactionTemp[$templateSalesDetail->field_name] = $transaction->{$templateSalesDetail->data};
                     }
