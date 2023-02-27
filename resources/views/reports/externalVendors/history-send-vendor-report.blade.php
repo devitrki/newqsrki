@@ -13,6 +13,7 @@
                 <th scope="col">Date</th>
                 <th scope="col">Template Sales</th>
                 <th scope="col">Target Vendor</th>
+                <th scope="col">Amount</th>
                 <th scope="col">Status</th>
                 <th scope="col">Description</th>
             </tr>
@@ -25,6 +26,7 @@
                 <td data-label="Date">{{ App\Library\Helper::DateConvertFormat($item->date, 'Y-m-d', 'd/m/Y') }}</td>
                 <td data-label="Template Sales">{{ $item->template_sales }}</td>
                 <td data-label="Target Vendor">{{ $item->target_vendor }}</td>
+                <td data-label="Amount" align="right">{{ $item->amount }}</td>
                 <td data-label="Status">{{ $item->status_desc }}</td>
                 <td data-label="Description">{{ $item->description }}</td>
             </tr>

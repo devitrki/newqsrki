@@ -196,9 +196,8 @@ class SendVendorController extends Controller
         ]);
     }
 
-    public function clearTest()
+    public function clearTest($targetVendorId)
     {
-        $targetVendorId = 2;
         $host = TargetVendor::getConfigByKey($targetVendorId, 'HOST');
         $authenticationKey = TargetVendor::getConfigByKey($targetVendorId, 'AUTHENTICATION_KEY');
 

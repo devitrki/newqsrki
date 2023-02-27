@@ -102,6 +102,7 @@ class SendTransactionVendor implements ShouldQueue
                         $historySendVendor->company_id = $sendVendor->company_id;
                         $historySendVendor->date = $this->date;
                         $historySendVendor->send_vendor_id = $sendVendor->id;
+                        $historySendVendor->amount = $transactionTemplateFormats['total'];
                         $historySendVendor->status = 1;
                         $historySendVendor->description = '';
                         $historySendVendor->save();

@@ -182,6 +182,7 @@ class SendVendor extends Model implements Auditable
         $templateSalesFieldNumbers = TemplateSales::getTemplateSalesFieldNumbers();
         $dataTransactions = [];
         $fieldTransactions = [];
+        $totalTransactions = 0;
 
         foreach ($transactions as $transaction) {
             $dataTransactionTemp = [];
@@ -211,12 +212,14 @@ class SendVendor extends Model implements Auditable
                     $fieldTransactions[] = $templateSalesDetail->field_name;
                 }
             }
+            $totalTransactions += $transaction->grand_total_amount;
             $dataTransactions[] = $dataTransactionTemp;
         }
 
         return [
             'datas' => $dataTransactions,
-            'fields' => $fieldTransactions
+            'fields' => $fieldTransactions,
+            'total' => $totalTransactions
         ];
     }
 }

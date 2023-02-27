@@ -31,6 +31,7 @@
                 <th>Date</th>
                 <th>Template Sales</th>
                 <th>Target Vendor</th>
+                <th>Amount</th>
                 <th>Status</th>
                 <th>Description</th>
             </tr>
@@ -43,6 +44,7 @@
                 <td>{{ App\Library\Helper::DateConvertFormat($item->date, 'Y-m-d', 'd/m/Y') }}</td>
                 <td>{{ $item->template_sales }}</td>
                 <td>{{ $item->target_vendor }}</td>
+                <td align="right">{{ $item->amount }}</td>
                 <td>{{ $item->status_desc }}</td>
                 <td>{{ $item->description }}</td>
             </tr>

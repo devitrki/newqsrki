@@ -26,6 +26,7 @@ class HistorySendVendor extends Model
         $historySendVendor->company_id = $companyId;
         $historySendVendor->date = $date;
         $historySendVendor->send_vendor_id = $sendVendorId;
+        $historySendVendor->amount = 0;
         $historySendVendor->status = 0;
         $historySendVendor->description = Lang::get($desc);
         $historySendVendor->save();
@@ -41,6 +42,7 @@ class HistorySendVendor extends Model
                                 'history_send_vendors.date',
                                 'history_send_vendors.status',
                                 'history_send_vendors.description',
+                                'history_send_vendors.amount',
                                 'target_vendors.name as target_vendor',
                                 'template_sales.name as template_sales',
                                 'send_vendors.plant_id',
