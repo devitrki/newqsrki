@@ -8,6 +8,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\Log;
 
 use App\Models\Pos\AlohaHistorySendSap;
 use App\Models\Pos\AlohaTransactionLog;
@@ -227,6 +228,8 @@ class UploadSalesAloha implements ShouldQueue
                 }
 
             } catch (\Throwable $th) {
+                Log::error("Send Aloha SAP: " . $th->getMessage());
+
                 $alohaHistorySendSap = new AlohaHistorySendSap;
                 $alohaHistorySendSap->company_id = $this->companyId;
                 $alohaHistorySendSap->date = $this->date;
