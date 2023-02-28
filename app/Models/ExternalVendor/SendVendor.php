@@ -199,7 +199,7 @@ class SendVendor extends Model implements Auditable
                 } else if ($templateSalesDetail->data == 'is_void') {
                     $dataTransactionTemp[$templateSalesDetail->field_name] = ($transaction->grand_total_amount < 0) ? true : false;
                 } else if ($templateSalesDetail->data == 'is_test') {
-                    $dataTransactionTemp[$templateSalesDetail->field_name] = true;
+                    $dataTransactionTemp[$templateSalesDetail->field_name] = false;
                 } else {
                     if (in_array($templateSalesDetail->data, $templateSalesFieldNumbers)) {
                         if ($templateSalesDetail->data == 'sub_total_amount' && $transaction->{$templateSalesDetail->data} <= 0) {
