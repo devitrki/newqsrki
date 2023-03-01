@@ -23,7 +23,7 @@
                                 <td data-label="No">{{ $i+1 }}</td>
                                 <td data-label="{{ __('Payment | Promotion') }}">{{ $item->PayTypeName }}</td>
                                 <td data-label="Qty" align="right">{{ App\Library\Helper::convertNumberToInd($item->TotalQty, '', 0) }}</td>
-                                <td data-label="Amount" align="right">{{ App\Library\Helper::convertNumberToInd($item->PayAmount, '', 0) }}</td>
+                                <td data-label="Amount" align="right">{{ App\Library\Helper::convertNumberToInd($item->PayAmount, '', 2) }}</td>
                             </tr>
                         @endforeach
                     </tbody>

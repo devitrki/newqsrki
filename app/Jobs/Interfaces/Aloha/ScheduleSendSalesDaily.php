@@ -12,18 +12,22 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Jobs\Interfaces\Aloha\UploadSalesAloha;
 
+use App\Models\Pos;
+
 class ScheduleSendSalesDaily implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public $companyId;
 
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct($companyId)
     {
-        //
+        $this->companyId = $companyId;
     }
 
     /**
@@ -35,22 +39,26 @@ class ScheduleSendSalesDaily implements ShouldQueue
     {
         $date = date('Y/m/d', strtotime('-1 days'));
 
-        $plantPosAlohas = DB::connection('aloha')
-                            ->table('dpvHstGndItem')
-                            ->leftJoin('gblStore', 'gblStore.storeID', 'dpvHstGndItem.FKStoreId')
-                            ->whereBetween('dpvHstGndItem.DateOfBusiness', [$date, $date])
-                            ->select('gblStore.SecondaryStoreID' )
-                            ->groupBy('gblStore.SecondaryStoreID')
-                            ->get();
+        $posData = DB::table('pos')
+                ->where('company_id', $this->companyId)
+                ->get();
 
-        foreach ($plantPosAlohas as $plant) {
+        foreach ($posData as $pos) {
+            $posRepository = Pos::getInstanceRepo($pos);
+            $initConnectionAloha = $posRepository->initConnectionDB();
+            if ($initConnectionAloha['status']) {
+                $sendDailyStores = $posRepository->getListSendDailyStores($this->companyId, $date);
 
-            if (UploadSalesAloha::dispatch($plant->SecondaryStoreID, $date)->onQueue('low')) {
-                Log::info('Send sales aloha daily date: ' . $date . ' and cust code : ' . $plant->SecondaryStoreID . ' running');
+                foreach ($sendDailyStores as $sendDailyStore) {
+                    if (UploadSalesAloha::dispatch($this->companyId, $sendDailyStore->SecondaryStoreID, $date)->onQueue('low')) {
+                        Log::info('Send sales aloha daily date: ' . $date . ' and cust code : ' . $sendDailyStore->SecondaryStoreID . ' running');
+                    } else {
+                        Log::error('Send sales aloha daily date: ' . $date . ' and cust code : ' . $sendDailyStore->SecondaryStoreID . ' not running');
+                    }
+                }
             } else {
-                Log::error('Send sales aloha daily date: ' . $date . ' and cust code : ' . $plant->SecondaryStoreID . ' not running');
+                Log::info('Send sales aloha daily date: ' . $date . ' failed: not connect aloha');
             }
-
         }
     }
 }

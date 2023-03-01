@@ -32,15 +32,15 @@
                         @isset( $items['h'.$time] )
                         <td data-label="{{ __('Bill') }}">{{ App\Library\Helper::convertNumberToInd($items['h'.$time]['bill'], '', 0) }}</td>
                         <td data-label="{{ __('Customer') }}">{{ App\Library\Helper::convertNumberToInd($items['h'.$time]['bill'], '', 0) }}
-                        <td data-label="{{ __('Total Price') }}">{{ App\Library\Helper::convertNumberToInd($items['h'.$time]['totalPrice'], '', 0) }}
-                        <td data-label="{{ __('Disc') }}">{{ App\Library\Helper::convertNumberToInd($items['h'.$time]['disc'], '', 0) }}
-                        <td data-label="{{ __('Sub Total') }}">{{ App\Library\Helper::convertNumberToInd($items['h'.$time]['subTotal'], '', 0) }}
+                        <td data-label="{{ __('Total Price') }}">{{ App\Library\Helper::convertNumberToInd($items['h'.$time]['totalPrice'], '', 2) }}
+                        <td data-label="{{ __('Disc') }}">{{ App\Library\Helper::convertNumberToInd($items['h'.$time]['disc'], '', 2) }}
+                        <td data-label="{{ __('Sub Total') }}">{{ App\Library\Helper::convertNumberToInd($items['h'.$time]['subTotal'], '', 2) }}
                         <td data-label="{{ __('SC') }}">0</td>
-                        <td data-label="{{ __('Total Sale') }}">{{ App\Library\Helper::convertNumberToInd($items['h'.$time]['subTotal'], '', 0) }}
-                        <td data-label="{{ __('Tax') }}">{{ App\Library\Helper::convertNumberToInd($items['h'.$time]['tax'], '', 0) }}
-                        <td data-label="{{ __('Rounding') }}">{{ App\Library\Helper::convertNumberToInd( abs($items['h'.$time]['totalPayment'] - ($items['h'.$time]['subTotal'] + $items['h'.$time]['tax'])), '', 0) }}
-                        <td data-label="{{ __('Net Sales') }}">{{ App\Library\Helper::convertNumberToInd($items['h'.$time]['netSales'], '', 0) }}
-                        <td data-label="{{ __('Total Payment') }}">{{ App\Library\Helper::convertNumberToInd($items['h'.$time]['totalPayment'], '', 0) }}
+                        <td data-label="{{ __('Total Sale') }}">{{ App\Library\Helper::convertNumberToInd($items['h'.$time]['subTotal'], '', 2) }}
+                        <td data-label="{{ __('Tax') }}">{{ App\Library\Helper::convertNumberToInd($items['h'.$time]['tax'], '', 2) }}
+                        <td data-label="{{ __('Rounding') }}">{{ App\Library\Helper::convertNumberToInd( abs($items['h'.$time]['totalPayment'] - ($items['h'.$time]['subTotal'] + $items['h'.$time]['tax'])), '', 2) }}
+                        <td data-label="{{ __('Net Sales') }}">{{ App\Library\Helper::convertNumberToInd($items['h'.$time]['netSales'], '', 2) }}
+                        <td data-label="{{ __('Total Payment') }}">{{ App\Library\Helper::convertNumberToInd($items['h'.$time]['totalPayment'], '', 2) }}
                         @else
                         <td data-label="{{ __('Bill') }}">0</td>
                         <td data-label="{{ __('Customer') }}">0</td>

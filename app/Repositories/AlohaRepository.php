@@ -453,33 +453,17 @@ class AlohaRepository implements PosRepository{
 
                             UNION ALL
 
-                            SELECT normcmb.SecondaryStoreID,
-                                    normcmb.ShortName,
-                                    normcmb.BohName,
-                                    SUM(normcmb.Quantity) AS Quantity,
-                                    SUM(normcmb.NettoSales * 1.1) AS GrossSales,
-                                    0 AS Discount,
-                                    SUM(normcmb.NettoSales) AS NettoSales,
-                                    SUM(normcmb.NettoSales * 0.1) AS Tax,
-                                    normcmb.ItemType,
-                                    CASE
-                                        WHEN normcmb.SalesMode = 1 THEN 'DINE IN'
-                                        WHEN normcmb.SalesMode = 2 THEN 'TAKE AWAY'
-                                        WHEN normcmb.SalesMode = 3 THEN 'DELIVERY'
-                                        WHEN normcmb.SalesMode = 4 THEN 'Drive Thru'
-                                        WHEN normcmb.SalesMode = 5 THEN 'GO FOOD'
-                                        WHEN normcmb.SalesMode = 6 THEN 'GRAB FOOD'
-                                        WHEN normcmb.SalesMode = 7 THEN 'BIG ORDER'
-                                        WHEN normcmb.SalesMode = 8 THEN 'CATERING'
-                                        WHEN normcmb.SalesMode = 9 THEN 'SOFT SERV'
-                                        WHEN normcmb.SalesMode = 10 THEN 'SHOPEE FOOD'
-                                        WHEN normcmb.SalesMode = 51 THEN 'RB-DINE IN'
-                                        WHEN normcmb.SalesMode = 52 THEN 'RB-TAKE AWAY'
-                                        WHEN normcmb.SalesMode = 53 THEN 'RB-GRAB FOOD'
-                                        WHEN normcmb.SalesMode = 54 THEN 'RB-GO FOOD'
-                                        WHEN normcmb.SalesMode = 71 THEN 'KIOSK - DI'
-                                        WHEN normcmb.SalesMode = 72 THEN 'KIOSK - TA'
-                                    END AS SalesMode
+                            SELECT
+                                normcmb.SecondaryStoreID,
+                                normcmb.ShortName,
+                                normcmb.BohName,
+                                SUM(normcmb.Quantity) AS Quantity,
+                                SUM(normcmb.GrossSales) AS GrossSales,
+                                0 AS Discount,
+                                SUM(normcmb.GrossSales / " . $taxMultiplication . ") AS NettoSales,
+                                SUM(normcmb.GrossSales - (normcmb.GrossSales / " . $taxMultiplication . ") ) AS Tax,
+                                normcmb.ItemType,
+                                " . $orderModeNormcmb . " AS SalesMode
                             FROM (
                                 SELECT
                                     d.SecondaryStoreID,
@@ -495,9 +479,9 @@ class AlohaRepository implements PosRepository{
                                         END AS VARCHAR(26)
                                     ) AS BohName,
                                     a.lcount AS Quantity,
-                                    0 AS GrossSales,
+                                    a.amount AS GrossSales,
                                     0 AS Discount,
-                                    a.amount AS NettoSales,
+                                    0 AS NettoSales,
                                     0 AS Tax,
                                     'NORM' AS ItemType,
                                     o.FKOrderModeId AS SalesMode
@@ -513,28 +497,53 @@ class AlohaRepository implements PosRepository{
                                 WHERE d.SecondaryStoreID = :storeId3 AND a.DateOfBusiness BETWEEN :dateFrom3 AND :dateUntil3 AND a.type = 87
                             ) normcmb
                             GROUP BY normcmb.SecondaryStoreID,
-                                    normcmb.ShortName,
-                                    normcmb.BohName,
-                                    normcmb.ItemType,
-                                    normcmb.SalesMode,
-                                    CASE
-                                        WHEN normcmb.SalesMode = 1 THEN 'DINE IN'
-                                        WHEN normcmb.SalesMode = 2 THEN 'TAKE AWAY'
-                                        WHEN normcmb.SalesMode = 3 THEN 'DELIVERY'
-                                        WHEN normcmb.SalesMode = 4 THEN 'Drive Thru'
-                                        WHEN normcmb.SalesMode = 5 THEN 'GO FOOD'
-                                        WHEN normcmb.SalesMode = 6 THEN 'GRAB FOOD'
-                                        WHEN normcmb.SalesMode = 7 THEN 'BIG ORDER'
-                                        WHEN normcmb.SalesMode = 8 THEN 'CATERING'
-                                        WHEN normcmb.SalesMode = 9 THEN 'SOFT SERV'
-                                        WHEN normcmb.SalesMode = 10 THEN 'SHOPEE FOOD'
-                                        WHEN normcmb.SalesMode = 51 THEN 'RB-DINE IN'
-                                        WHEN normcmb.SalesMode = 52 THEN 'RB-TAKE AWAY'
-                                        WHEN normcmb.SalesMode = 53 THEN 'RB-GRAB FOOD'
-                                        WHEN normcmb.SalesMode = 54 THEN 'RB-GO FOOD'
-                                        WHEN normcmb.SalesMode = 71 THEN 'KIOSK - DI'
-                                        WHEN normcmb.SalesMode = 72 THEN 'KIOSK - TA'
-                                    END
+                                        normcmb.ShortName,
+                                        normcmb.BohName,
+                                        normcmb.ItemType,
+                                        normcmb.SalesMode,
+                                        " . $orderModeNormcmb . "
+
+                            UNION ALL
+
+                            SELECT
+                                rounding.SecondaryStoreID,
+                                rounding.ShortName,
+                                rounding.BohName,
+                                SUM(rounding.Quantity) AS Quantity,
+                                SUM(rounding.GrossSales) AS GrossSales,
+                                0 AS Discount,
+                                SUM(rounding.GrossSales / " . $taxMultiplication . ") AS NettoSales,
+                                SUM(rounding.GrossSales - (rounding.GrossSales / " . $taxMultiplication . ") ) AS Tax,
+                                rounding.ItemType,
+                                " . $orderModeRounding . " AS SalesMode
+                            FROM (
+                                SELECT
+                                    d.SecondaryStoreID,
+                                    'Rounding' AS ShortName,
+                                    '9799999' AS BohName,
+                                    a.lcount AS Quantity,
+                                    a.amount AS GrossSales,
+                                    0 AS Discount,
+                                    0 AS NettoSales,
+                                    0 AS Tax,
+                                    'NORM' AS ItemType,
+                                    o.FKOrderModeId AS SalesMode
+                                FROM RF_Datamart.dbo.dpvHstGndSale a
+                                LEFT JOIN RF_Datamart.dbo.gblStore d ON a.FKstoreID = d.storeID
+                                JOIN (
+                                    SELECT DISTINCT sg.CheckNumber, sg.FKOrderModeId
+                                    FROM RF_Datamart.dbo.dpvHstGndItem sg
+                                    LEFT JOIN RF_Datamart.dbo.gblStore sd ON sg.FKstoreID = sd.storeID
+                                    WHERE sd.SecondaryStoreID = :storeId6 AND sg.DateOfBusiness BETWEEN :dateFrom6 AND :dateUntil6
+                                ) o ON a.CheckNumber = o.CheckNumber
+                                WHERE d.SecondaryStoreID = :storeId7 AND a.DateOfBusiness BETWEEN :dateFrom7 AND :dateUntil7 AND a.type = 45
+                            ) rounding
+                            GROUP BY rounding.SecondaryStoreID,
+                                        rounding.ShortName,
+                                        rounding.BohName,
+                                        rounding.ItemType,
+                                        rounding.SalesMode,
+                                        " . $orderModeRounding . "
 
                             UNION ALL
 
@@ -556,10 +565,10 @@ class AlohaRepository implements PosRepository{
                                 'Take Away Charge' AS ShortName,
                                 '9999993' AS BohName,
                                 sum(a.lCount) AS Quantity,
-                                sum(a.Amount*1.1) AS GrossSales,
+                                sum(a.Amount) AS GrossSales,
                                 0 AS Discount,
-                                sum(a.Amount) AS NettoSales,
-                                sum(a.Amount*0.1) AS Tax,
+                                sum(a.Amount / " . $taxMultiplication . ") AS NettoSales,
+                                sum(a.Amount - (a.Amount / " . $taxMultiplication . ")) AS Tax,
                                 'NORM' AS ItemType,
                                 '' AS SalesMode
                             from RF_Datamart.dbo.dpvHstSalesSummary a
@@ -588,10 +597,10 @@ class AlohaRepository implements PosRepository{
                                     'Delivery Charge' AS ShortName,
                                     '9999991' AS BohName,
                                     sum(a.lCount) AS Quantity,
-                                    sum(a.Amount*1.1) AS GrossSales,
+                                    sum(a.Amount) AS GrossSales,
                                     0 AS Discount,
-                                    sum(a.Amount) AS NettoSales,
-                                    sum(a.Amount*0.1) AS Tax,
+                                    sum(a.Amount / " . $taxMultiplication . ") AS NettoSales,
+                                    sum(a.Amount - (a.Amount / " . $taxMultiplication . ")) AS Tax,
                                     'NORM' AS ItemType,
                                     '' AS SalesMode
                                 from RF_Datamart.dbo.dpvHstSalesSummary a
@@ -624,6 +633,12 @@ class AlohaRepository implements PosRepository{
                             'storeId5' => $customerCode,
                             'dateFrom5' => $dateFrom,
                             'dateUntil5' => $dateUntil,
+                            'storeId6' => $customerCode,
+                            'dateFrom6' => $dateFrom,
+                            'dateUntil6' => $dateUntil,
+                            'storeId7' => $customerCode,
+                            'dateFrom7' => $dateFrom,
+                            'dateUntil7' => $dateUntil,
                         ]);
 
         return $results;
@@ -632,6 +647,13 @@ class AlohaRepository implements PosRepository{
     public function getDataSalesByInventory($storeID, $dateFrom, $dateUntil)
     {
         $customerCode = Plant::getCustomerCodeById($storeID);
+
+        $pos = DB::table('pos')
+                ->where('id', $this->posId)
+                ->select('company_id')
+                ->first();
+
+        $taxMultiplication = Company::getConfigByKey($pos->company_id, 'TAX_MULTIPLICATION');
 
         $results = DB::connection($this->connectionName)
                         ->select( DB::raw("
@@ -657,8 +679,8 @@ class AlohaRepository implements PosRepository{
                                 aln.Quantity,
                                 aln.GrossSales,
                                 aln.Discount,
-                                aln.NettoSales,
-                                aln.Tax,
+                                aln.GrossSales / " . $taxMultiplication . " AS NettoSales,
+                                aln.GrossSales - (aln.GrossSales / " . $taxMultiplication . ") AS Tax,
                                 aln.ItemType,
                                 aln.SalesMode
                             FROM
@@ -678,10 +700,10 @@ class AlohaRepository implements PosRepository{
                                         a.Quantity
                                     END
                                 ) AS Quantity,
-                                SUM(a.Price * 1.1) AS GrossSales,
+                                SUM( a.Price ) AS GrossSales,
                                 0 AS Discount,
-                                sum(a.Price) AS NettoSales,
-                                SUM(a.Price * 0.1) AS Tax,
+                                0 AS NettoSales,
+                                0 AS Tax,
                                 'ERLA' AS ItemType,
                                 c.Name AS SalesMode
                             FROM RF_Datamart.dbo.dpvHstGndItem a
@@ -829,7 +851,7 @@ class AlohaRepository implements PosRepository{
                             ->leftJoin('gblStore', 'gblStore.storeID', 'dpvHstTender.FKstoreID')
                             ->where('gblStore.SecondaryStoreID', $customerCode)
                             ->whereDate('dpvHstTender.DateOfBusiness', $date)
-                            ->select('Tender.name', DB::raw('SUM(dpvHstTender.lCount) as count'), DB::raw('SUM( IIF(Tender.UserNumber = 401, dpvHstTender.Amount * 1.1, dpvHstTender.Amount) ) as amount'))
+                            ->select('Tender.name', DB::raw('SUM(dpvHstTender.lCount) as count'), DB::raw('SUM( dpvHstTender.Amount ) as amount'))
                             ->groupBy('Tender.name')
                             ->get();
 
@@ -847,7 +869,7 @@ class AlohaRepository implements PosRepository{
                         ->leftJoin('gblStore', 'gblStore.storeID', 'dpvHstComp.FKstoreID')
                         ->where('gblStore.SecondaryStoreID', $customerCode)
                         ->whereDate('dpvHstComp.DateOfBusiness', $date)
-                        ->select('Comp.name', DB::raw('SUM(dpvHstComp.lCount) as count'), DB::raw('SUM(dpvHstComp.Amount*1.1) as amount'))
+                        ->select('Comp.name', DB::raw('SUM(dpvHstComp.lCount) as count'), DB::raw('SUM(dpvHstComp.Amount) as amount'))
                         ->groupBy('Comp.name')
                         ->get();
 
@@ -874,7 +896,7 @@ class AlohaRepository implements PosRepository{
                             ->where('gblStore.SecondaryStoreID', $customerCode)
                             ->whereDate('dpvHstPromotion.DateOfBusiness', $date)
                             ->where('dpvHstPromotion.Amount', '>', 0)
-                            ->select('Promotion.name', DB::raw('SUM(dpvHstPromotion.lCount) as count'), DB::raw('SUM(dpvHstPromotion.Amount*1.1) as amount'))
+                            ->select('Promotion.name', DB::raw('SUM(dpvHstPromotion.lCount) as count'), DB::raw('SUM(dpvHstPromotion.Amount) as amount'))
                             ->groupBy('Promotion.name')
                             ->get();
 
@@ -1041,6 +1063,13 @@ class AlohaRepository implements PosRepository{
     {
         $customerCode = Plant::getCustomerCodeById($storeID);
 
+        $pos = DB::table('pos')
+                ->where('id', $this->posId)
+                ->select('company_id')
+                ->first();
+
+        $taxMultiplication = Company::getConfigByKey($pos->company_id, 'TAX_MULTIPLICATION');
+
         $items = [];
 
         $dpvHstGndItems = DB::connection($this->connectionName)
@@ -1052,10 +1081,10 @@ class AlohaRepository implements PosRepository{
                                 'dgi.Hour',
                                 'dgi.CheckNumber',
                                 'dgi.DateOfBusiness',
-                                DB::raw('SUM(dgi.price) as totalPrice'),
-                                DB::raw('SUM(dgi.price * 1.1) as GrossSales'),
-                                DB::raw('SUM((dgi.price - dgi.DiscPric) * 1.1) as disc'),
-                                DB::raw('SUM(dgi.price * 0.1) as tax'),
+                                DB::raw("SUM(dgi.price / " . $taxMultiplication . ") as totalPrice"),
+                                DB::raw('SUM(dgi.price) as GrossSales'),
+                                DB::raw("SUM((dgi.price - dgi.DiscPric)) as disc"),
+                                DB::raw("SUM(dgi.price - (dgi.price / " . $taxMultiplication . ")) as tax"),
                                 DB::raw('(
                                     SELECT SUM(Amount)
                                     FROM dpvHstGndTender as dgt
@@ -1647,10 +1676,10 @@ class AlohaRepository implements PosRepository{
                                         'Take Away Charge' AS ShortName,
                                         '9999993' AS BohName,
                                         sum(a.lCount) AS Quantity,
-                                        sum(a.Amount*1.1) AS GrossSales,
+                                        sum(a.Amount) AS GrossSales,
                                         0 AS Discount,
-                                        sum(a.Amount) AS NettoSales,
-                                        sum(a.Amount*0.1) AS Tax,
+                                        sum(a.Amount / " . $taxMultiplication . ") AS NettoSales,
+                                        sum(a.Amount - (a.Amount / " . $taxMultiplication . ")) AS Tax,
                                         'NORM' AS ItemType,
                                         '' AS SalesMode
                                     from RF_Datamart.dbo.dpvHstSalesSummary a
@@ -1682,10 +1711,10 @@ class AlohaRepository implements PosRepository{
                                         'Delivery Charge' AS ShortName,
                                         '9999991' AS BohName,
                                         sum(a.lCount) AS Quantity,
-                                        sum(a.Amount*1.1) AS GrossSales,
+                                        sum(a.Amount) AS GrossSales,
                                         0 AS Discount,
-                                        sum(a.Amount) AS NettoSales,
-                                        sum(a.Amount*0.1) AS Tax,
+                                        sum(a.Amount / " . $taxMultiplication . ") AS NettoSales,
+                                        sum(a.Amount - (a.Amount / " . $taxMultiplication . ")) AS Tax,
                                         'NORM' AS ItemType,
                                         '' AS SalesMode
                                     from RF_Datamart.dbo.dpvHstSalesSummary a
@@ -1901,5 +1930,25 @@ class AlohaRepository implements PosRepository{
             'sales' => $salesInventory['sales'],
             'inventories' => $salesInventory['inventories']
         ];
+    }
+
+    public function getListSendDailyStores($companyId, $date)
+    {
+        $qPlantPosAlohas = DB::connection($this->connectionName)
+                            ->table('dpvHstGndItem')
+                            ->leftJoin('gblStore', 'gblStore.storeID', 'dpvHstGndItem.FKStoreId')
+                            ->whereBetween('dpvHstGndItem.DateOfBusiness', [$date . ' 00:00:00', $date . ' 23:59:59'])
+                            ->select('gblStore.SecondaryStoreID' )
+                            ->groupBy('gblStore.SecondaryStoreID');
+
+        if ($companyId == 2) {
+            $qPlantPosAlohas = $qPlantPosAlohas->where('gblStore.FKRegionId', 2);
+        } else {
+            $qPlantPosAlohas = $qPlantPosAlohas->where('gblStore.FKRegionId', 0);
+        }
+
+        $plantPosAlohas = $qPlantPosAlohas->get();
+
+        return $plantPosAlohas;
     }
 }

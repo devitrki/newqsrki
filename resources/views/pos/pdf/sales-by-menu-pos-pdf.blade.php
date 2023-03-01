@@ -42,7 +42,7 @@
                     <td>{{ $item->ProductName }}</td>
                     <td>{{ $item->SaleModeName }}</td>
                     <td align="right">{{ App\Library\Helper::convertNumberToInd($item->TotalQty, '', 0) }}</td>
-                    <td align="right">{{ App\Library\Helper::convertNumberToInd($item->NetSales, '', 0) }}</td>
+                    <td align="right">{{ App\Library\Helper::convertNumberToInd($item->NetSales, '', 2) }}</td>
                 </tr>
                 @php
                     $totalQty += $item->TotalQty;
@@ -54,7 +54,7 @@
                 <tr>
                     <th colspan="4" align="right">Total</th>
                     <td align="right">{{ App\Library\Helper::convertNumberToInd($totalQty, '', 0) }}</td>
-                    <td align="right">{{ App\Library\Helper::convertNumberToInd($totalNetSales, '', 0) }}</td>
+                    <td align="right">{{ App\Library\Helper::convertNumberToInd($totalNetSales, '', 2) }}</td>
                 </tr>
             </tfoot>
         </table>

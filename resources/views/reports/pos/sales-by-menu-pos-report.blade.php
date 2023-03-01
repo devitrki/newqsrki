@@ -43,7 +43,7 @@
                         <tr>
                             <th colspan="4" align="right">Total</th>
                             <td align="right">{{ App\Library\Helper::convertNumberToInd($totalQty, '', 0) }}</td>
-                            <td align="right">{{ App\Library\Helper::convertNumberToInd($totalNetSales, '', 0) }}</td>
+                            <td align="right">{{ App\Library\Helper::convertNumberToInd($totalNetSales, '', 2) }}</td>
                         </tr>
                     </tfoot>
                 </table>

@@ -10,6 +10,12 @@ use Illuminate\Support\Facades\Log;
 // flag change pass
 use App\Jobs\ScheduleFlagChangeMonthlyPass;
 
+// interfaces
+use App\Jobs\Interfaces\Aloha\ScheduleSendSalesDaily;
+
+// send vendor
+use App\Jobs\ExternalVendor\ScheduleSendDailyExternalVendor;
+
 // tax
 use App\Jobs\Tax\ScheduleSendTaxFtp;
 
@@ -34,6 +40,7 @@ class Kernel extends ConsoleKernel
 
         $companies = DB::table('companies')
                         ->select('id')
+                        ->whereIn('id', [2])
                         ->get();
 
         foreach ($companies as $company) {
@@ -42,12 +49,17 @@ class Kernel extends ConsoleKernel
                 continue;
             }
 
-            // schedule send tax
-            if ($companyTimezone) {
-                $schedule->job(new ScheduleSendTaxFtp($company->id))
-                        ->timezone($companyTimezone)
-                        ->dailyAt('23:26');
-            }
+            $schedule->job(new ScheduleSendTaxFtp($company->id))
+                    ->timezone($companyTimezone)
+                    ->dailyAt('06:00');
+
+            $schedule->job(new ScheduleSendSalesDaily($company->id))
+                    ->timezone($companyTimezone)
+                    ->dailyAt('06:00');
+
+            $schedule->job(new ScheduleSendDailyExternalVendor($company->id))
+                    ->timezone($companyTimezone)
+                    ->dailyAt('06:00');
 
             // schedule for asset so
             $statusGenerateAssetSo = Configuration::getValueCompByKeyFor($company->id, 'financeacc', 'status_generate_asset_so');
