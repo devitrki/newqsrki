@@ -590,6 +590,7 @@ class Plant extends Model implements Auditable
     public static function getListStore($companyId, $pos = '0')
     {
         $list = DB::table('plants')
+                    ->where('company_id', $companyId)
                     ->whereNotNull('pos_id')
                     ->where('type', 1);
 

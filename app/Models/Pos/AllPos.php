@@ -89,7 +89,7 @@ class AllPos extends Model
             $selisih = $totalPayment - $totalSales;
             $dataDatePayment['total_payment'] = $totalPayment;
             $dataDatePayment['total_sales'] = $totalSales;
-            $dataDatePayment['selisih'] = $selisih;
+            $dataDatePayment['selisih'] = round($selisih, 2);
 
             $flag = false;
 

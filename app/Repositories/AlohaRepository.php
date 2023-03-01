@@ -256,14 +256,14 @@ class AlohaRepository implements PosRepository{
                                             ->where('gblStore.SecondaryStoreID', $customerCode)
                                             ->where('dpvHstComp.DateOfBusiness', $date)
                                             ->where('Comp.UserNumber', '<>', '401')
-                                            ->sum(DB::raw('ROUND(dpvHstComp.Amount * 1.1, 0)'));
+                                            ->sum('dpvHstComp.Amount');
 
                 $discountDpvHstPromotion =  DB::connection($this->connectionName)
                                                 ->table('dpvHstPromotion')
                                                 ->leftJoin('gblStore', 'gblStore.storeID', 'dpvHstPromotion.FKstoreID')
                                                 ->where('gblStore.SecondaryStoreID', $customerCode)
                                                 ->where('dpvHstPromotion.DateOfBusiness', $date)
-                                                ->sum(DB::raw('ROUND(dpvHstPromotion.Amount * 1.1, 0)'));
+                                                ->sum('dpvHstPromotion.Amount');
 
                 $payAmount = $discountDpvHstComp + $discountDpvHstPromotion;
 
@@ -289,7 +289,7 @@ class AlohaRepository implements PosRepository{
                                                 ->where('gblStore.SecondaryStoreID', $customerCode)
                                                 ->where('dpvHstComp.DateOfBusiness', $date)
                                                 ->where('Comp.UserNumber', '401')
-                                                ->sum(DB::raw('ROUND(dpvHstComp.Amount * 1.1, 0)'));
+                                                ->sum('dpvHstComp.Amount');
 
                     $payAmount += $discountDpvHstComp;
                 }
@@ -297,7 +297,7 @@ class AlohaRepository implements PosRepository{
             }
         }
 
-        return (int)$payAmount;
+        return round($payAmount, 2);
     }
 
     public function getTotalQtyByMethodPayment($storeID, $date, $methodPaymentName)
@@ -354,7 +354,7 @@ class AlohaRepository implements PosRepository{
                         ->leftJoin('gblStore', 'gblStore.storeID', 'dpvHstGndItem.FKstoreID')
                         ->where('gblStore.SecondaryStoreID', $customerCode)
                         ->where('dpvHstGndItem.DateOfBusiness', $date)
-                        ->sum(DB::raw('ROUND(dpvHstGndItem.Price * 1.1, 0)'));
+                        ->sum('dpvHstGndItem.Price');
 
         $salesCharge = DB::connection($this->connectionName)
                         ->table('dpvHstSalesSummary')
@@ -362,16 +362,34 @@ class AlohaRepository implements PosRepository{
                         ->where('gblStore.SecondaryStoreID', $customerCode)
                         ->where('dpvHstSalesSummary.DateOfBusiness', $date)
                         ->where('dpvHstSalesSummary.Type', 18)
-                        ->sum(DB::raw('ROUND(dpvHstSalesSummary.Amount * 1.1, 0)'));
+                        ->sum('dpvHstSalesSummary.Amount');
 
-        $totalSales = $salesItem + $salesCharge;
+        $rounding = DB::connection($this->connectionName)
+                        ->table('dpvHstGndSale')
+                        ->leftJoin('gblStore', 'gblStore.storeID', 'dpvHstGndSale.FKstoreID')
+                        ->where('gblStore.SecondaryStoreID', $customerCode)
+                        ->where('dpvHstGndSale.DateOfBusiness', $date)
+                        ->where('dpvHstGndSale.Type', 45)
+                        ->sum('dpvHstGndSale.Amount');
 
-        return $totalSales;
+        $totalSales = $salesItem + $salesCharge + $rounding;
+
+        return round($totalSales, 2);
     }
 
     public function getDataSalesByMenu($storeID, $dateFrom, $dateUntil)
     {
         $customerCode = Plant::getCustomerCodeById($storeID);
+
+        $pos = DB::table('pos')
+                ->where('id', $this->posId)
+                ->select('company_id')
+                ->first();
+
+        $taxMultiplication = Company::getConfigByKey($pos->company_id, 'TAX_MULTIPLICATION');
+        $orderMode = OrderModePos::getQueryCondtionAloha($pos->company_id, 'c.Name');
+        $orderModeNormcmb = OrderModePos::getQueryCondtionAloha($pos->company_id, 'normcmb.SalesMode', 'id');
+        $orderModeRounding = OrderModePos::getQueryCondtionAloha($pos->company_id, 'rounding.SalesMode', 'id');
 
         $results = DB::connection($this->connectionName)
                         ->select( DB::raw("
@@ -396,17 +414,17 @@ class AlohaRepository implements PosRepository{
                                 aln.Quantity,
                                 aln.GrossSales,
                                 aln.Discount,
-                                aln.NettoSales,
-                                aln.Tax,
+                                aln.GrossSales / " . $taxMultiplication . " AS NettoSales,
+                                aln.GrossSales - (aln.GrossSales / " . $taxMultiplication . ") AS Tax,
                                 aln.ItemType,
                                 aln.SalesMode
                             FROM
                             (
-                            SELECT
-                                d.SecondaryStoreID,
-                                b.ShortName,
-                                b.BohName,
-                                sum(
+                                SELECT
+                                    d.SecondaryStoreID,
+                                    b.ShortName,
+                                    b.BohName,
+                                    sum(
                                     CASE
                                     WHEN
                                         a.Type = 1
@@ -415,19 +433,19 @@ class AlohaRepository implements PosRepository{
                                     ELSE
                                         a.Quantity
                                     END
-                                ) AS Quantity,
-                                SUM(a.Price * 1.1) AS GrossSales,
-                                0 AS Discount,
-                                sum(a.Price) AS NettoSales,
-                                SUM(a.Price * 0.1) AS Tax,
-                                'NORM' AS ItemType,
-                                c.Name AS SalesMode
-                            FROM RF_Datamart.dbo.dpvHstGndItem a
-                            LEFT JOIN RF_Datamart.dbo.Item b ON a.FKItemId = b.ItemId
-                            LEFT JOIN RF_Datamart.dbo.OrderMode c ON a.FKOrderModeId = c.OrderModeId
-                            LEFT JOIN RF_Datamart.dbo.gblStore d ON a.FKstoreID = d.storeID
-                            WHERE a.QSQuickComboID = 0 AND a.ParentId = 0 AND d.SecondaryStoreID = :storeId AND a.DateOfBusiness BETWEEN :dateFrom AND :dateUntil
-                            GROUP BY d.SecondaryStoreID,
+                                    ) AS Quantity,
+                                    SUM( a.Price ) AS GrossSales,
+                                    0 AS Discount,
+                                    0 AS NettoSales,
+                                    0 AS Tax,
+                                    'NORM' AS ItemType,
+                                    c.Name AS SalesMode
+                                FROM RF_Datamart.dbo.dpvHstGndItem a
+                                LEFT JOIN RF_Datamart.dbo.Item b ON a.FKItemId = b.ItemId
+                                LEFT JOIN RF_Datamart.dbo.OrderMode c ON a.FKOrderModeId = c.OrderModeId
+                                LEFT JOIN RF_Datamart.dbo.gblStore d ON a.FKstoreID = d.storeID
+                                WHERE (a.QSQuickComboID = 0 AND a.ParentId = 0 OR (a.QSQuickComboID <> 0 AND a.ParentId <> 0 AND a.FKCategoryId = 102 AND a.price > 0)) AND d.SecondaryStoreID = :storeId AND a.DateOfBusiness BETWEEN :dateFrom AND :dateUntil
+                                GROUP BY d.SecondaryStoreID,
                                         b.ShortName,
                                         b.BohName,
                                         c.Name
@@ -565,21 +583,21 @@ class AlohaRepository implements PosRepository{
                                 dlv.SalesMode
                             FROM
                             (
-                            SELECT
-                                b.SecondaryStoreID,
-                                'Delivery Charge' AS ShortName,
-                                '9999991' AS BohName,
-                                sum(a.lCount) AS Quantity,
-                                sum(a.Amount*1.1) AS GrossSales,
-                                0 AS Discount,
-                                sum(a.Amount) AS NettoSales,
-                                sum(a.Amount*0.1) AS Tax,
-                                'NORM' AS ItemType,
-                                '' AS SalesMode
-                            from RF_Datamart.dbo.dpvHstSalesSummary a
-                            LEFT JOIN RF_Datamart.dbo.gblStore b ON a.FKstoreID = b.storeID
-                            WHERE a.Type = 18 AND a.TypeId = 3 AND  b.SecondaryStoreID = :storeId5 AND a.DateOfBusiness BETWEEN :dateFrom5 AND :dateUntil5
-                            GROUP BY b.SecondaryStoreID
+                                SELECT
+                                    b.SecondaryStoreID,
+                                    'Delivery Charge' AS ShortName,
+                                    '9999991' AS BohName,
+                                    sum(a.lCount) AS Quantity,
+                                    sum(a.Amount*1.1) AS GrossSales,
+                                    0 AS Discount,
+                                    sum(a.Amount) AS NettoSales,
+                                    sum(a.Amount*0.1) AS Tax,
+                                    'NORM' AS ItemType,
+                                    '' AS SalesMode
+                                from RF_Datamart.dbo.dpvHstSalesSummary a
+                                LEFT JOIN RF_Datamart.dbo.gblStore b ON a.FKstoreID = b.storeID
+                                WHERE a.Type = 18 AND a.TypeId = 3 AND  b.SecondaryStoreID = :storeId5 AND a.DateOfBusiness BETWEEN :dateFrom5 AND :dateUntil5
+                                GROUP BY b.SecondaryStoreID
                             ) dlv
 
                         ) un
