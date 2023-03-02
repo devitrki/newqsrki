@@ -9,7 +9,12 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+
+use Carbon\Carbon;
+
 use App\Jobs\Tax\SendTaxFtp;
+
+use App\Models\Company;
 
 class ScheduleSendTaxFtp implements ShouldQueue
 {
@@ -34,14 +39,15 @@ class ScheduleSendTaxFtp implements ShouldQueue
      */
     public function handle()
     {
+        $companyTimezone = Company::getConfigByKey($this->companyId, 'TIMEZONE');
+        $date = Carbon::now($companyTimezone)->subDay()->format('Y/m/d');
+
         $sendTaxes = DB::table('send_taxes')
                         ->where('company_id', $this->companyId)
                         ->where('status', 1)
                         ->select('id')
                         ->distinct()
                         ->get();
-
-        $date = date('Y/m/d',strtotime("-1 days"));
 
         foreach ($sendTaxes as $tax) {
             if (SendTaxFtp::dispatch($date, $tax->id)->onQueue('low')) {

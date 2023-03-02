@@ -7,12 +7,14 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
+
 use App\Jobs\Interfaces\Aloha\UploadSalesAloha;
 
 use App\Models\Pos;
+use App\Models\Company;
 
 class ScheduleSendSalesDaily implements ShouldQueue
 {
@@ -37,7 +39,8 @@ class ScheduleSendSalesDaily implements ShouldQueue
      */
     public function handle()
     {
-        $date = date('Y/m/d', strtotime('-1 days'));
+        $companyTimezone = Company::getConfigByKey($this->companyId, 'TIMEZONE');
+        $date = Carbon::now($companyTimezone)->subDay()->format('Y/m/d');
 
         $posData = DB::table('pos')
                 ->where('company_id', $this->companyId)

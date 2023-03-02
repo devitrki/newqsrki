@@ -10,7 +10,12 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+
+use Carbon\Carbon;
+
 use App\Jobs\ExternalVendor\SendTransactionVendor;
+
+use App\Models\Company;
 
 class ScheduleSendDailyExternalVendor implements ShouldQueue
 {
@@ -35,14 +40,15 @@ class ScheduleSendDailyExternalVendor implements ShouldQueue
      */
     public function handle()
     {
+        $companyTimezone = Company::getConfigByKey($this->companyId, 'TIMEZONE');
+        $date = Carbon::now($companyTimezone)->subDay()->format('Y/m/d');
+
         $sendVendors = DB::table('send_vendors')
                         ->where('company_id', $this->companyId)
                         ->where('status', 1)
                         ->select('id')
                         ->distinct()
                         ->get();
-
-        $date = date('Y/m/d',strtotime("-1 days"));
 
         foreach ($sendVendors as $sendVendor) {
             if (SendTransactionVendor::dispatch($date, $sendVendor->id)->onQueue('low')) {
