@@ -151,24 +151,31 @@ class UploadSalesAloha implements ShouldQueue
                                     }
                                 }
 
-                                foreach ($lastTransactionLogs as $lastTransactionLog) {
-                                    $message = $lastTransactionLog['document_type'] . ' ' . $lastTransactionLog['status_code'] . ' ' . $lastTransactionLog['message'];
+                                if (sizeof($lastTransactionLogs) > 0) {
+                                    foreach ($lastTransactionLogs as $lastTransactionLog) {
+                                        $message = $lastTransactionLog['document_type'] . ' ' . $lastTransactionLog['status_code'] . ' ' . $lastTransactionLog['message'];
 
-                                    $alohaTransactionLog = new AlohaTransactionLog;
-                                    $alohaTransactionLog->company_id = $this->companyId;
-                                    $alohaTransactionLog->type = 1;
-                                    $alohaTransactionLog->status = $lastTransactionLog['status_code'];
-                                    $alohaTransactionLog->message = $message;
-                                    $alohaTransactionLog->closing_date = $this->date;
-                                    $alohaTransactionLog->plant_id = $plant->id;
-                                    if ($alohaTransactionLog->save()) {
-                                        $statusHistorySap = true;
-                                        $messageHistorySap = "Success send to SAP";
-                                    } else {
-                                        $statusHistorySap = false;
-                                        $messageHistorySap = "Save aloha transaction log error";
-                                        break;
+                                        $alohaTransactionLog = new AlohaTransactionLog;
+                                        $alohaTransactionLog->company_id = $this->companyId;
+                                        $alohaTransactionLog->type = 1;
+                                        $alohaTransactionLog->status = $lastTransactionLog['status_code'];
+                                        $alohaTransactionLog->message = $message;
+                                        $alohaTransactionLog->closing_date = $this->date;
+                                        $alohaTransactionLog->plant_id = $plant->id;
+                                        if ($alohaTransactionLog->save()) {
+                                            $statusHistorySap = true;
+                                            $messageHistorySap = "Success send to SAP";
+                                        } else {
+                                            $statusHistorySap = false;
+                                            $messageHistorySap = "Save aloha transaction log error";
+                                            break;
+                                        }
                                     }
+                                } else {
+                                    Log::info(json_encode($logRespSap));
+
+                                    $statusHistorySap = false;
+                                    $messageHistorySap = "Transaction log not found from response middleware";
                                 }
 
                             } else {
@@ -194,7 +201,7 @@ class UploadSalesAloha implements ShouldQueue
                             $alohaTransactionLog->company_id = $this->companyId;
                             $alohaTransactionLog->type = 0;
                             $alohaTransactionLog->status = 'E';
-                            $alohaTransactionLog->message = json_encode($resSap['errors']);
+                            $alohaTransactionLog->message = (isset($resSap['errors'])) ? json_encode($resSap['errors']) : "Error from middleware";
                             $alohaTransactionLog->closing_date = $this->date;
                             $alohaTransactionLog->plant_id = $plant->id;
                             if ($alohaTransactionLog->save()) {
