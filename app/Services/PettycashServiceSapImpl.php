@@ -71,7 +71,7 @@ class PettycashServiceSapImpl implements PettycashService
                         $dataSubmited[$i_det] = [
                             'gl_account' => $transSubmit->gl_code,
                             'is_debit' => ($transSubmit->type == '0') ? true : false,
-                            'gl_amount' => (int)$transSubmit->debit,
+                            'gl_amount' => (float)$transSubmit->debit,
                             'tax_code' => '', // please confirm to new interface
                             'assignment' => Plant::getShortNameById($transSubmit->plant_id),
                             'item_text' => strtolower($transSubmit->description),
@@ -89,7 +89,7 @@ class PettycashServiceSapImpl implements PettycashService
                         $dataSubmited[$i_det] = [
                             'gl_account' => $transSubmit->gl_code,
                             'is_debit' => ($transSubmit->type == '0') ? true : false,
-                            'gl_amount' => (int)$transSubmit->kredit,
+                            'gl_amount' => (float)$transSubmit->kredit,
                             'tax_code' => Configuration::getValueCompByKeyFor($companyId, 'financeacc', 'tax_code'),
                             'assignment' => Plant::getShortNameById($transSubmit->plant_id),
                             'item_text' => strtolower($transSubmit->description),
@@ -144,6 +144,8 @@ class PettycashServiceSapImpl implements PettycashService
                 'currency_id' => $currencyComp,
                 'items' => $dataSubmited
             ];
+
+            !dd($data_posted);
 
             $sapRepository = new SapRepositorySapImpl($companyId);
             $sapResponse = $sapRepository->uploadPettyCash($data_posted);

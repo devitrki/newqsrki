@@ -125,13 +125,13 @@ class PettycashController extends Controller
                     }
                 })
                 ->addColumn('debit_desc', function ($data) {
-                    return Helper::convertNumberToInd($data->debit, '', 0);
+                    return Helper::convertNumberToInd($data->debit, '', 2);
                 })
                 ->addColumn('kredit_desc', function ($data) {
-                    return Helper::convertNumberToInd($data->kredit, '', 0);
+                    return Helper::convertNumberToInd($data->kredit, '', 2);
                 })
                 ->addColumn('saldo_desc', function ($data) {
-                    return Helper::convertNumberToInd($data->saldo, '', 0);
+                    return Helper::convertNumberToInd($data->saldo, '', 2);
                 })
                 ->addColumn('created_at_desc', function ($data) {
                     return date("d-m-Y H:i:s", strtotime($data->created_at));
@@ -337,7 +337,7 @@ class PettycashController extends Controller
         DB::commit();
 
         // send mail to am
-        Mail::queue(new NotificationPettycash('am_approve', $lastItemId));
+        // Mail::queue(new NotificationPettycash('am_approve', $lastItemId));
 
         $stat = 'success';
         $msg = Lang::get("message.save.success", ["data" => Lang::get("petty cash")]);
@@ -428,7 +428,7 @@ class PettycashController extends Controller
             // send mail to outlet that transaction approved
             $plant = Plant::getDataPlantById($pettycash->plant_id);
             if( isset($plant->email) ){
-                Mail::queue(new NotificationPettycash('am_approved', $id));
+                // Mail::queue(new NotificationPettycash('am_approved', $id));
             } else {
                 Log::alert($plant->initital . ' ' . $plant->short_name . ' email empty, please mapping.');
             }
@@ -563,7 +563,7 @@ class PettycashController extends Controller
             // send mail to outlet that transaction approved
             $plant = Plant::getDataPlantById($pettycash->plant_id);
             if( isset($plant->email) ){
-                Mail::queue(new NotificationPettycash('am_unapproved', $pettycash->id));
+                // Mail::queue(new NotificationPettycash('am_unapproved', $pettycash->id));
             } else {
                 Log::alert($plant->initital . ' ' . $plant->short_name . ' email empty, please mapping.');
             }
@@ -693,7 +693,7 @@ class PettycashController extends Controller
             // send mail to outlet that transaction approved
             $plant = Plant::getDataPlantById($pettycash->plant_id);
             if( isset($plant->email) ){
-                Mail::queue(new NotificationPettycash('fa_rejected', $pettycash->id, $userName));
+                // Mail::queue(new NotificationPettycash('fa_rejected', $pettycash->id, $userName));
             } else {
                 Log::alert($plant->initital . ' ' . $plant->short_name . ' email empty, please mapping.');
             }
