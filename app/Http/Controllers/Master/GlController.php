@@ -96,8 +96,8 @@ class GlController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-                        'code' => 'required|unique:gls,code',
-                        'name' => 'required|unique:gls,name',
+                        'code' => 'required',
+                        'name' => 'required',
                         'description' => 'required',
                         'privilege' => 'required',
                     ]);
