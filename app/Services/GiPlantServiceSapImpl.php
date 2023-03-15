@@ -86,6 +86,7 @@ class GiPlantServiceSapImpl implements GiPlantService
                 $message = Lang::get("message.upload.success", ["data" => Lang::get("gi plant")]);
             } else {
                 $status = false;
+                $message = $lastRespSap['message'];
 
                 if ($lastRespSap['po_status']['success']) {
                     if ($lastRespSap['po_status']['document_number'] != "") {
