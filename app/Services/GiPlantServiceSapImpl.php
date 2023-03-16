@@ -35,6 +35,7 @@ class GiPlantServiceSapImpl implements GiPlantService
         }
 
         $dataUpload = [
+            'id' => $data_gi['header']->sap_uuid ? $data_gi['header']->sap_uuid : '',
             'company_id' => $sapCodeComp,
             'supply_plant_id' => $data_gi['header']->issuing_plant_code,
             'ref_doc_no' => $data_gi['header']->issuer,
@@ -96,7 +97,20 @@ class GiPlantServiceSapImpl implements GiPlantService
                 }
             }
 
+            $sapUuid = '';
+
+            if ($lastRespSap['id']) {
+                $countSapUuid = DB::table('gi_plants')
+                                    ->where('sap_uuid', $lastRespSap['id'])
+                                    ->count('id');
+
+                if ($countSapUuid <= 0) {
+                    $sapUuid = $lastRespSap['id'];
+                }
+            }
+
             $giPlant = GiPlant::find($giPlantId);
+            $giPlant->sap_uuid = $sapUuid;
             $giPlant->json_sap = json_encode($dataUpload);
             if($document_number != ''){
                 $giPlant->document_number = $document_number;

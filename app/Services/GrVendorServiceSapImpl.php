@@ -105,8 +105,8 @@ class GrVendorServiceSapImpl implements GrVendorService
             'plant_id' => Plant::getCodeById($request->plant_id),
             'po_number' => $request->po_number,
             'posting_date' => Helper::DateConvertFormat($request->posting_date, 'Y/m/d', 'Y-m-d'),
-            'reference_number' => $request->ref_number,
-            'delivery_note' => $request->gi_number . '',
+            'reference_number' => '',
+            'delivery_note' => $request->ref_number,
             'header_text' => '',
             'items' => [
                 [

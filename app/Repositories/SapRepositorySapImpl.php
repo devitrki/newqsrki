@@ -269,6 +269,7 @@ class SapRepositorySapImpl implements SapRepository
 
         $fakeResponse = [
             [
+                'id' => '98BE940438241EDDAF8348526F014BA9',
                 'status' => 'S',
                 'message' => 'PO Number 4570001128',
                 'success' => $success,
@@ -292,9 +293,9 @@ class SapRepositorySapImpl implements SapRepository
                     'logs' => []
                 ],
                 'gi_status' => [
-                    'success' => true,
+                    'success' => false,
                     'message' => 'Releases Error',
-                    'document_number' => '100000003',
+                    'document_number' => '',
                     'document_year' => '',
                     'logs' => []
                 ],
