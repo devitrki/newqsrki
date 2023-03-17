@@ -54,7 +54,7 @@ class SapMiddleware
         if ($messageErrors && is_array($messageErrors)) {
             for ($i=sizeof($messageErrors)-1; $i >= 0; $i--) {
                 $error = $messageErrors[$i];
-                if ($error['type'] == 'E' || $error['type'] == '') {
+                if ($error['type'] == 'S' || $error['type'] == 'E' || $error['type'] == '') {
                     $message .= $error['msg'];
                 }
             }
