@@ -97,7 +97,7 @@ class GiPlantServiceSapImpl implements GiPlantService
                 }
             }
 
-            $sapUuid = '';
+            $sapUuid = $data_gi['header']->sap_uuid ? $data_gi['header']->sap_uuid : '';
 
             if ($lastRespSap['id']) {
                 $countSapUuid = DB::table('gi_plants')
