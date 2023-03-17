@@ -32,7 +32,8 @@ class GiPlant extends Model implements Auditable
                             'receiving_plant.code as receiving_plant_code', 'gi_plants.issuer', 'gi_plants.date', 'gi_plants.requester',
                             'issuing_plant.description as issuing_plant_desc', 'receiving_plant.description as receiving_plant_desc',
                             'issuing_plant.address as issuing_plant_address', 'receiving_plant.address as receiving_plant_address',
-                            'gi_plants.document_number', 'gi_plants.document_posto', 'gi_plants.company_id', 'gi_plants.receiving_plant_id')
+                            'gi_plants.document_number', 'gi_plants.document_posto', 'gi_plants.company_id', 'gi_plants.receiving_plant_id',
+                            'gi_plants.sap_uuid')
                     ->where('gi_plants.id', $id)
                     ->first();
 
