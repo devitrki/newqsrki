@@ -145,8 +145,6 @@ class PettycashServiceSapImpl implements PettycashService
                 'items' => $dataSubmited
             ];
 
-            !dd($data_posted);
-
             $sapRepository = new SapRepositorySapImpl($companyId);
             $sapResponse = $sapRepository->uploadPettyCash($data_posted);
             if ($sapResponse['status']) {

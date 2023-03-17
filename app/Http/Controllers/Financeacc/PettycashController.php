@@ -71,7 +71,9 @@ class PettycashController extends Controller
                         'pettycashes.transaction_id',
                         'pettycashes.receive_pic',
                         'pettycashes.created_at',
-                    );
+                    )
+                    ->orderByDesc('pettycashes.transaction_date')
+                    ->orderByDesc('pettycashes.id');
 
         if ($request->has('plant_id')) {
             if( $request->query('plant_id') != 0 ){

@@ -46,7 +46,9 @@ class WasteController extends Controller
                         'wastes.posting_date',
                         'wastes.created_at',
                         DB::raw("CONCAT(plants.initital ,' ', plants.short_name) AS plant"),
-                    );
+                    )
+                    ->orderByDesc('wastes.date')
+                    ->orderByDesc('wastes.id');
 
         if($request->has('plant-id')){
             if($request->query('plant-id') != ''){
