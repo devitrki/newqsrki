@@ -98,7 +98,8 @@ class UploadSalesAloha implements ShouldQueue
 
                 } else {
                     $dateSap = Helper::DateConvertFormat($this->date, 'Y/m/d', 'Y-m-d');
-                    $dateNow = Date::now()->format('Y-m-d');
+                    $dateTimeNow = Date::now()->format('Y-m-d H:i:s');
+                    $dateNow = Helper::DateConvertFormatTz($dateTimeNow, 'Y-m-d H:i:s', 'UTC', 'Y-m-d', $this->companyId);
 
                     $payloads = [
                         'outlet_id' => $this->customerCode,
