@@ -33,15 +33,31 @@ class Posto extends Model
         $outstandingPosto = $response['data'];
 
         $count = 0;
-
+        $outstanding = [];
         if( $outstandingPosto ){
+
+            foreach ($outstandingPosto as $v) {
+                $remainingQty = $v['schedule_qty'] + $v['gr_qty'];
+
+                $outstanding[] = [
+                    'plant_from' => Plant::getShortNameByCode($v['supplying_plant_id']),
+                    'sj' => $v['gi_number'],
+                    'date' => Helper::DateConvertFormat($v['delivery_date'], 'Y-m-d', 'd/m/Y'),
+                    'mat_code' => $v['material_id'],
+                    'mat_desc' => $v['material_name'],
+                    'uom' => $v['uom_id'],
+                    'qty' => $v['schedule_qty'],
+                    'qty_out' => $remainingQty,
+                ];
+            }
+
             $count = sizeof($outstandingPosto);
         }
 
         return [
             'count' => $count,
             'header' => $header,
-            'items' => $outstandingPosto,
+            'items' => $outstanding,
         ];
     }
 
