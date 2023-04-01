@@ -133,7 +133,7 @@ class UploadSalesAloha implements ShouldQueue
                                 $fiFlag = false;
                                 $mmFlag = false;
                                 $sdFlag = false;
-                                for ($i=sizeof($logs)-1; $i > 0; $i--) {
+                                for ($i=sizeof($logs)-1; $i >= 0; $i--) {
                                     if ($logs[$i]['document_date'] == $dateSap && $logs[$i]['entry_date'] == $dateNow) {
                                         $lastTransactionLogs[] = $logs[$i];
                                         if ($logs[$i]['document_type'] == 'FI') {

@@ -8,6 +8,7 @@ use App\Http\Controllers\Tax\ReportTaxController;
 use App\Http\Controllers\Pos\ReportPosController;
 use App\Http\Controllers\Interfaces\ReportInterfacesController;
 use App\Http\Controllers\ExternalVendor\ReportExternalVendorController;
+use App\Http\Controllers\Logbook\ReportLogbookController;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,10 +19,10 @@ use App\Http\Controllers\ExternalVendor\ReportExternalVendorController;
 |
 */
 
-// // module logbook application
-// Route::get('logbook/{menu}', 'Logbook\ReportLogbookController@index');
-// Route::get('logbook/{menu}/report', 'Logbook\ReportLogbookController@report');
-// Route::post('logbook/{menu}/export', 'Logbook\ReportLogbookController@export');
+// module logbook application
+Route::get('logbook/{menu}', [ReportLogbookController::class, 'index']);
+Route::get('logbook/{menu}/report', [ReportLogbookController::class, 'report']);
+Route::post('logbook/{menu}/export', [ReportLogbookController::class, 'export']);
 
 // module inventory
 Route::get('inventory/{menu}', [ReportInventoryController::class, 'index']);

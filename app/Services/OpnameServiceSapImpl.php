@@ -50,11 +50,11 @@ class OpnameServiceSapImpl implements OpnameService
         $payload = [
             'company_id' => $sapCodeComp,
             'plant_id' => $plant->code,
-            'sloc_id' => Plant::getSlocIdCurStock($opname->plant_id),
+            'sloc_id' => [Plant::getSlocIdCurStock($opname->plant_id)],
             'material_type_id' => Stock::getMaterialTypeAll()
         ];
 
-        $sapRepository = new SapRepositorySapImpl($opname->company_id, true);
+        $sapRepository = new SapRepositorySapImpl($opname->company_id);
         $sapResponse = $sapRepository->getCurrentStockPlant($payload);
 
         $stockSap = [];

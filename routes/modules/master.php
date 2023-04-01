@@ -22,6 +22,7 @@ use App\Http\Controllers\Master\OpnameMaterialFormulaController;
 use App\Http\Controllers\Master\PaymentPosController;
 use App\Http\Controllers\Master\UomConvertController;
 use App\Http\Controllers\Master\OrderModePosController;
+use App\Http\Controllers\Master\MaterialLogbookController;
 use App\Http\Controllers\Auth\LanguageController;
 
 /*
@@ -73,10 +74,10 @@ Route::get('material/sync', [MaterialController::class, 'sync']);
 Route::get('material/uom/{id}', [MaterialController::class, 'selectAlternativeUom']);
 Route::get('material/data/{id}', [MaterialController::class, 'getDataMaterial']);
 
-// Route::resource('material-logbook', 'Master\MaterialLogbookController')->except(['show']);
-// Route::get('material-logbook/dtble', 'Master\MaterialLogbookController@dtble');
-// Route::get('material-logbook/select', 'Master\MaterialLogbookController@select');
-// Route::get('material-logbook/sync', 'Master\MaterialLogbookController@sync');
+Route::resource('material-logbook', MaterialLogbookController::class)->except(['show']);
+Route::get('material-logbook/dtble', [MaterialLogbookController::class, 'dtble']);
+Route::get('material-logbook/select', [MaterialLogbookController::class, 'select']);
+Route::get('material-logbook/sync', [MaterialLogbookController::class, 'sync']);
 
 Route::resource('material-outlet', MaterialOutletController::class)->except(['show']);
 Route::get('material-outlet/dtble', [MaterialOutletController::class, 'dtble']);

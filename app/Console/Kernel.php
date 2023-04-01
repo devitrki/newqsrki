@@ -19,6 +19,9 @@ use App\Jobs\ExternalVendor\ScheduleSendDailyExternalVendor;
 // tax
 use App\Jobs\Tax\ScheduleSendTaxFtp;
 
+// logbook
+use App\Jobs\Logbook\GenerateTaskLogbook;
+
 // asset so
 use App\Jobs\Financeacc\GenerateAssetSO;
 use App\Jobs\Financeacc\SubmitAssetSO;
@@ -60,6 +63,10 @@ class Kernel extends ConsoleKernel
             $schedule->job(new ScheduleSendDailyExternalVendor($company->id))
                     ->timezone($companyTimezone)
                     ->dailyAt('06:00');
+
+            // $schedule->job(new GenerateTaskLogbook($company->id))
+            //         ->timezone($companyTimezone)
+            //         ->daily();
 
             // schedule for asset so
             $statusGenerateAssetSo = Configuration::getValueCompByKeyFor($company->id, 'financeacc', 'status_generate_asset_so');

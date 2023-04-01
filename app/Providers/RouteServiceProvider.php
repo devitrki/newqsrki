@@ -68,6 +68,10 @@ class RouteServiceProvider extends ServiceProvider
                 ->group(base_path('routes/modules/externalVendors.php'));
 
             Route::middleware('web', 'auth', 'verified')
+                ->prefix('logbook')
+                ->group(base_path('routes/modules/logbooks.php'));
+
+            Route::middleware('web', 'auth', 'verified')
                 ->prefix('report')
                 ->group(base_path('routes/modules/report.php'));
         });

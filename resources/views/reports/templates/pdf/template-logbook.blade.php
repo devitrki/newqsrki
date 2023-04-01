@@ -135,7 +135,7 @@
         <header>
             <table>
                 <tr>
-                    <td class="logo"><img src="{{ public_path( 'images/logo/rki.png' ) }}" alt="Richeese Kuliner Indonesia"></td>
+                    <td class="logo"><img src="{{ asset( 'images/logo/rki.png' ) }}" alt="Richeese Kuliner Indonesia"></td>
                     <td class="title"><h1>@yield('title')</h1></td>
                 </tr>
             </table>

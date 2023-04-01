@@ -10,6 +10,9 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
+use Carbon\Carbon;
+
+use App\Models\Company;
 use App\Models\Logbook\LbAppReview;
 use App\Models\Logbook\LbDlyInvKitchen;
 use App\Models\Logbook\LbDlyInvCashier;
@@ -38,14 +41,16 @@ class GenerateTaskLogbook implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public $companyId;
+
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct($companyId)
     {
-
+        $this->companyId = $companyId;
     }
 
     /**
@@ -55,10 +60,12 @@ class GenerateTaskLogbook implements ShouldQueue
      */
     public function handle()
     {
-        $date = Date('Y-m-d');
-        $dateYesterday = Date('Y/m/d', strtotime('-1 days'));
+        $companyTimezone = Company::getConfigByKey($this->companyId, 'TIMEZONE');
+        $date = Carbon::now($companyTimezone)->format('Y-m-d');
+        $dateYesterday = Carbon::now($companyTimezone)->subDay()->format('Y/m/d');
 
         $stores = DB::table('plants')
+                    ->where('company_id', $this->companyId)
                     ->where('type', 1)
                     ->where('status', 1)
                     ->select('id')
@@ -97,6 +104,7 @@ class GenerateTaskLogbook implements ShouldQueue
 
             // check app review have already created ?
             $checkAppReview = DB::table('lb_app_reviews')
+                                ->where('company_id', $this->companyId)
                                 ->where('plant_id', $store->id)
                                 ->where('date', $date);
 
@@ -107,6 +115,7 @@ class GenerateTaskLogbook implements ShouldQueue
             } else {
                 // not yet created
                 $lbAppReview = new LbAppReview;
+                $lbAppReview->company_id = $this->companyId;
                 $lbAppReview->plant_id = $store->id;
                 $lbAppReview->date = $date;
                 if( $lbAppReview->save() ){
@@ -117,8 +126,9 @@ class GenerateTaskLogbook implements ShouldQueue
             // check app review yesterday have already created ? for daily inventory
             $lbAppReviewIdYesterday = 0;
             $checkAppReviewYesterday = DB::table('lb_app_reviews')
-                                ->where('plant_id', $store->id)
-                                ->where('date', $dateYesterday);
+                                        ->where('company_id', $this->companyId)
+                                        ->where('plant_id', $store->id)
+                                        ->where('date', $dateYesterday);
 
             if($checkAppReviewYesterday->count() > 0){
                 // already created
